@@ -1,0 +1,58 @@
+﻿I'm sorry, but an uncaught exception occurred.
+
+While running game code:
+  File "game/6---Cпрайты и анимации врагов и героев.rpy", line 2420, in script
+    image Charafightsprite = ConditionSwitch(
+  File "game/6---Cпрайты и анимации врагов и героев.rpy", line 2420, in <module>
+    image Charafightsprite = ConditionSwitch(
+                             ~~~~~~~~~~~~~~~^
+
+
+    ...<37 lines>...
+        "True", "Chara_idle_up_anim"
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "<none>", line 1
+    store.pers_dict['Чара'].damage_gain_for_vis => 10
+                                            ^        
+SyntaxError: invalid syntax
+
+-- Full Traceback ------------------------------------------------------------
+
+Traceback (most recent call last):
+  File "game/6---Cпрайты и анимации врагов и героев.rpy", line 2420, in script
+    image Charafightsprite = ConditionSwitch(
+  File "renpy/ast.py", line 1273, in execute
+    img = renpy.python.py_eval_bytecode(self.code.bytecode)
+          ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^
+  File "renpy/python.py", line 1298, in py_eval_bytecode
+    return eval(bytecode, globals, locals)
+           ~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "game/6---Cпрайты и анимации врагов и героев.rpy", line 2420, in <module>
+    image Charafightsprite = ConditionSwitch(
+                             ~~~~~~~~~~~~~~~^
+
+
+    ...<37 lines>...
+        "True", "Chara_idle_up_anim"
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "renpy/display/layout.py", line 1767, in ConditionSwitch
+    code = renpy.python.py_compile(cond, "eval")
+           ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^
+  File "renpy/python.py", line 1260, in py_compile
+    raise e
+  File "renpy/python.py", line 1190, in py_compile
+    tree = compile(source, filename, py_mode, ast.PyCF_ONLY_AST | flags, True)
+           ~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<none>", line 1
+    store.pers_dict['Чара'].damage_gain_for_vis => 10
+                                            ^        
+SyntaxError: invalid syntax
+
+Windows-10-10.0.19045-SP0 AMD64
+Ren'Py 8.5.2.26010301
+DeltaFateTale 12112024
+Mon Jul 20 22:29:50 2026
