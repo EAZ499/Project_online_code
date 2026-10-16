@@ -1609,13 +1609,15 @@ init python:
         Проверяет, можно ли использовать consumable.
         Новая система: проверяет наличие предмета в инвентаре.
         """
+        if store.consumable_inventory.get(item_id, 0) <= 0:
+            return False
         if getattr(store, "battlenumber", 0) == 1:
             archie = (getattr(store, "enemies", {}) or {}).get("Арчи")
             if (archie is not None and getattr(archie, "mood", "happy") == "angry" and
                     renpy.random.random() <= float(getattr(archie, "critrate", 0.20))):
                 renpy.notify("Арчи заблокировал использование предмета!")
                 return False
-        return store.consumable_inventory.get(item_id, 0) > 0
+        return True
 
 # ============================================================================
 # ИНИЦИАЛИЗАЦИЯ НАЧАЛЬНЫХ CONSUMABLES С ЭФФЕКТАМИ

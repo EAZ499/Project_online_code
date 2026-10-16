@@ -2459,7 +2459,6 @@ init python:
             new_hp = max(0, int(value))
             if (getattr(store, "battlenumber", 0) == 1 and
                     getattr(self, "name", None) == "Арчи" and new_hp < old_hp and
-                    not getattr(self, "_archie_damage_guard", False) and
                     "archie_enemy_damage_hook" in globals()):
                 self._archie_damage_guard = True
                 try:

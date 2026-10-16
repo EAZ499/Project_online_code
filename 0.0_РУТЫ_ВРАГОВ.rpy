@@ -121,12 +121,8 @@ init python:
         tree = archie_mood_tree.get(getattr(target, "mood", "happy"), {})
         spec = tree.get(action_name, {})
         result = spec.get("success" if success else "failure", {})
-        # Пассивка «Думай, Крис!» иногда отменяет откат пощады.
-        if (not success and getattr(target, "mood", "happy") == "neutral" and
-                result.get("rollback") and renpy.random.random() <= 0.25):
-            result = dict(result)
-            result.pop("rollback", None)
-            renpy.notify("Арчи закрыл глаза на ошибку! Штраф отменен.")
+        if "archie_apply_social_passives" in globals():
+            result = archie_apply_social_passives(target, attacker, action_name, success, result)
         diplomacy = int(getattr(attacker, "diplomacy", 0) or 0)
         if result.get("progress"):
             target.spare_progress = min(target.spare_max, target.spare_progress + diplomacy * int(getattr(store, "dip_multiply", 1) or 1))
@@ -142,15 +138,6 @@ init python:
             target.archie_taunt_actions = int(getattr(target, "archie_taunt_actions", 0)) + 1
         if action_name in ("Рассказать", "Поддержать", "Играть"):
             target.archie_peace_actions = int(getattr(target, "archie_peace_actions", 0)) + 1
-        if getattr(target, "mood", "happy") == "happy" and not success:
-            target.dc_offset = int(getattr(target, "dc_offset", 0)) - 1
-        elif getattr(target, "mood", "happy") == "neutral" and success:
-            if action_name in ("Убеждение", "Поддержать", "Исполнение") and getattr(attacker, "name", None) == "Крис":
-                attacker.bonus_charm = getattr(attacker, "bonus_charm", 0) + 8
-                renpy.notify("Крис получает +8% к очарованию!")
-            elif action_name in ("Рассказать", "Играть", "Дразнить"):
-                target.dc_offset = int(getattr(target, "dc_offset", 0)) - 1
-                renpy.notify("Сложность бросков снижена на 1!")
         process_enemy_routes(target, action_name)
 
     def archie_difficulty(target, action_name):

@@ -115,7 +115,7 @@ screen enemyattack:
     $ jevil_speed = store.enemies["ДжевилV1"].speed
     timer 0.1 action SetVariable ("enemies_is_attacking", 1) repeat False
     if all_battle_enemies_done():
-        timer 0.01 action Jump("afterenemyattack")
+        timer 0.01 action [Function(archie_enemy_attack_phase_hook), Jump("afterenemyattack")]
 
     #timer 0.5 action SetVariable("souloutrange", 0) repeat True
 
@@ -459,7 +459,6 @@ label afterenemyattack:
 
     if battlenumber == 1:
         $ archie_on_battle_round_tick()
-        $ archie_enemy_attack_phase_hook()
 
     # ШАГ 2: Освобождение мыши с сохранением позиции
     $ force_release_mouse()
