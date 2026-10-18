@@ -85,7 +85,14 @@ init python:
 
         # 3. Рассчитываем и наносим урон (дебафы применяются внутри calculate_dmg_to_hero)
         damage = enemy.calculate_dmg_to_hero(target_hero)
-        
+
+        # Пассивка Фрогетты «Больно не будет!»
+        if enemy.name == "Фрогетта" and damage > 0 and "frog_try_lethal_on_attack" in globals():
+            frog_try_lethal_on_attack(target_hero)
+        # Пассивка Фрогестера «Наточенные стрелы»
+        if enemy.name == "Фрогестер" and damage > 0 and "frog_frogster_bleed_on_hit" in globals():
+            frog_frogster_bleed_on_hit(target_hero)
+
         # 3.5. «Перестрелка в полдень» Кловера (ур.5): когда противник атакует
         # Кловера — неважно, промахнулся, попал или ударил в щит, — тот
         # отвечает выстрелом. Шанс попадания = 18% от текущего шанса
@@ -96,16 +103,15 @@ init python:
                 if riposte_damage > 0:
                     enemy.current_hp = max(0, getattr(enemy, "current_hp", 0) - riposte_damage)
                     add_attack_result("Кловер", enemy.name, riposte_damage, False, "normal")
-        
-        
+
         # 5. Добавляем в новую систему множественных атак
         if damage > 0:
             add_attack_result(enemy.name, target_hero.name, damage, enemy.crits == 1, "enemy")
-        
+
         # 4. Проверяем, не проиграли ли мы
         if all(char.current_hp <= 0 for char_name, char in store.characters.items() if char_name in store.team_manager.team_slots):
             renpy.jump("gameover")
-        
+
         # 5. Показываем экран с результатами
         renpy.show_screen("heroes_attacked_visual")
 
@@ -269,6 +275,24 @@ screen enemyattack:
                 hovered [SetVariable("enemymonster", store.enemies.get("dummy2")), Function(enemy_attack_without_closing_screen)]
                 action NullAction()
         timer 14 / store.enemies["dummy2"].speed action [Function(setattr, store.enemies["dummy2"], "turn", 1)]
+
+    elif battlenumber == 20:  # Лягушки
+        if hasattr(store, 'enemies') and store.enemies:
+            $ _frog_names = ["Фроглин", "Фрогетта", "Фрогестер", "Фрогис"]
+            for _fname in _frog_names:
+                imagebutton:
+                    at textbuttontest
+                    idle "fightor.png"
+                    hover "magicor.png"
+                    action [
+                        SetVariable("enemy_ind_atk_ratio", 1.0),
+                        Function(enemy_attack_and_show_results, store.enemies.get(_fname))
+                    ]
+            # Таймеры завершения хода для каждого
+            timer 10.5 / store.enemies["Фроглин"].speed  action [Function(setattr, store.enemies["Фроглин"],  "turn", 1)]
+            timer 10.5 / store.enemies["Фрогетта"].speed action [Function(setattr, store.enemies["Фрогетта"], "turn", 1)]
+            timer 10.5 / store.enemies["Фрогестер"].speed action [Function(setattr, store.enemies["Фрогестер"], "turn", 1)]
+            timer 10.5 / store.enemies["Фрогис"].speed   action [Function(setattr, store.enemies["Фрогис"],   "turn", 1)]
 
 
 
@@ -493,6 +517,8 @@ label afterenemyattack:
     $ archie_on_round_end()
     $ archie_tick_courage()
     $ archie_tick_all()
+    $ frog_magic_harm_tick()
+    $ frog_on_battle_round_tick()
     $ sedric_on_round_end()
     # Фабри: перезарядка магии фамильяров сбрасывается 1 раз за раунд
     # ВСЕГДА, независимо от того, жив фамильяр или нет. Здесь же идёт

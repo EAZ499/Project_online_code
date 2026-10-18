@@ -99,6 +99,8 @@ init  python:
             return ["dummy", "Тревор", "ДжевилV1"]
         elif battlenumber == 13:
             return ["dummy2", "Тревор"]
+        elif battlenumber == 20:  # Лягушки
+            return ["Фроглин", "Фрогетта", "Фрогестер", "Фрогис"]
         else:
             return ["нет"]
     
@@ -2164,6 +2166,16 @@ image Spamtonfightsprite = ConditionSwitch(
 image dummyfightsprite = ConditionSwitch(
     "spritestyle == 'above'", "Kris_pisya.png",
     "spritestyle == 'under'", "up0b.png")
+
+image Froglinfightsprite = ConditionSwitch("spritestyle == 'above'", "Kris_pisya.png", "spritestyle == 'under'", "up0b.png")
+image Froggettefightsprite = ConditionSwitch("spritestyle == 'above'", "Kris_pisya.png", "spritestyle == 'under'", "up0b.png")
+image Frogsterfightsprite = ConditionSwitch("spritestyle == 'above'", "Kris_pisya.png", "spritestyle == 'under'", "up0b.png")
+image Frogisfightsprite = ConditionSwitch("spritestyle == 'above'", "Kris_pisya.png", "spritestyle == 'under'", "up0b.png")
+
+image Froglinheadcolored = "Krisheadcolored.png"
+image Froggetteheadcolored = "Krisheadcolored.png"
+image Frogsterheadcolored = "Krisheadcolored.png"
+image Frogisheadcolored = "Krisheadcolored.png"
 
 
 

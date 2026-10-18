@@ -92,6 +92,8 @@ label fightbegin12:
     $ izzy_reset_battle_passives()
     $ archie_reset_battle_passives()
     $ sedric_reset_battle_passives()
+    $ init_all_frogs_battle_state()
+    $ frog_apply_magic_aura_on_battle_start()
 
     # Пассивки Азриеля на новый бой: облик по умолчанию, «Образ принца»,
     # «Рука помощи», огневые шансы и накопленные бонусы защиты/танка.

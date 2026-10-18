@@ -952,8 +952,7 @@ default consumable_names = {
     "pot_acc_5": "Зелье концентрации (5 ходов)",
     "pot_all_3": "Эликсир силы (3 хода)",
     "pot_all_5": "Эликсир силы (5 ходов)",
-    
-    
+
     "food_clubsandwich": "Сэндвич",
     "food_sans_sandwich": "Сэндвич Санса",
     "food_banana": "Банан",
@@ -1957,7 +1956,7 @@ init python:
                     accuracy_debuffchance=0, critdmg_debuffchance=0, extraequip=None,
                     xp=0, ask_way=0, persuade_way=0, tell_way=0, support_way=0,
                     play_way=0, perform_way=0, humiliate_way=0, tease_way=0, scare_way=0,
-                     base_magic=0, speed=1.0, spare_max=100, accuracy=0.5):
+                    base_magic=0, speed=1.0, spare_max=100, accuracy=0.5):
             self.name = name
             self.nameeng = nameeng
             self.sprite_style = "up"
@@ -2426,6 +2425,8 @@ init python:
                 self.route_stage = 1
             if "spare_max" not in self.__dict__:
                 self.spare_max = 100
+            if "action_difficulties" not in self.__dict__:
+                self.action_difficulties = {}
 
             if "mood_action_used" not in self.__dict__ or not isinstance(self.mood_action_used, dict):
                 self.mood_action_used = {
@@ -2465,6 +2466,10 @@ init python:
                     new_hp = archie_enemy_damage_hook(self, old_hp, new_hp)
                 finally:
                     self._archie_damage_guard = False
+            # НОВОЕ — пассивки лягушек на получении урона
+            if (new_hp < old_hp and "frog_on_damage_taken" in globals() and
+                    getattr(self, "name", None) in ("Фрогетта", "Фрогестер", "Фрогис")):
+                new_hp = frog_on_damage_taken(self, old_hp, new_hp)
             self._current_hp = max(0, int(new_hp))
 
         # Дополнительные методы сериализации для совместимости с Ren'Py
@@ -3321,7 +3326,7 @@ init python:
             # (persistent, не привязано к слоту сохранения).
             decaying_penalty = kris_decaying_penalty() if self.name == "Крис" else 0
             return max(1, self.max_hp_levels[self.get_safe_index(self.max_hp_levels)]
-                       + self.maxhpartifactmod - decaying_penalty)
+                    + self.maxhpartifactmod - decaying_penalty)
 
         @max_hp.setter
         def max_hp(self, value):
@@ -4130,7 +4135,12 @@ init python:
             karma_bonus = int(getattr(enemy, "sans_karma", 0) or 0) if self.name == "Санс" else 0
             hero_score = int(store.base_nego_perform) + store.nego_selected_stat_value + store.nego_social_value + karma_bonus
 
-            if hasattr(enemy, "base_difficulty"):
+            # 1) Прямые сложности действия на объекте врага (у лягушек)
+            _action_diffs = getattr(enemy, "action_difficulties", {}) or {}
+            _act_key = {"Убедить": "Убеждение", "Исполнить": "Исполнение"}.get(store.attackindex, store.attackindex)
+            if _act_key in _action_diffs:
+                store.nego_difficulty = int(_action_diffs[_act_key])
+            elif hasattr(enemy, "base_difficulty"):
                 mood = getattr(enemy, "mood", "neutral")
                 diff_mods = getattr(enemy, f"{stat_key}_difficulty_mod", {})
                 store.nego_difficulty = int(enemy.base_difficulty + diff_mods.get(mood, 0) - getattr(enemy, "noelle_frost_social_penalty", 0))
@@ -4138,11 +4148,15 @@ init python:
                 store.nego_difficulty = int(getattr(self, "base_difficulty", 10))
 
             store.nego_total_score = hero_score
-            # По дизайн-документу проверка успешна только при строгом превышении.
             success = hero_score > store.nego_difficulty
             if getattr(enemy, "name", None) == "Арчи":
                 store.nego_difficulty = store.archie_difficulty(enemy, store.attackindex) + int(getattr(enemy, "dc_offset", 0))
                 success = hero_score > store.nego_difficulty
+
+            # Фрогис: «Исключительная упёртость» — превращает успех в провал
+            if success and getattr(enemy, "name", None) == "Фрогис" and "frog_try_pride_override" in globals():
+                if frog_try_pride_override(enemy):
+                    success = False
 
             if success and renpy.random.random() <= min(1, self.charm / 100.0):
                 store.dip_multiply = 2
@@ -4764,6 +4778,11 @@ init python:
                 if hasattr(store, "get_consumable_item_effects_level1"):
                     _fx = store.get_consumable_item_effects_level1(item_id) or {}
                 archie_on_consumable_used(self, item_id, _fx)
+            if hasattr(store, "frog_on_consumable_used"):
+                _fx2 = {}
+                if hasattr(store, "get_consumable_item_effects_level1"):
+                    _fx2 = store.get_consumable_item_effects_level1(item_id) or {}
+                frog_on_consumable_used(self, item_id, _fx2)
             return True
 
         def use_regular_consumable_teamwide(self, item_id):
@@ -9175,11 +9194,77 @@ init python:
                 bloodshed_debuffchance=0,
                 prone_chance=0,
                 xp=12
-            )
+            ),
+            "Фроглин": Enemy(
+                name="Фроглин", nameeng="Froglin",
+                base_def=1, max_hp=40,
+                base_magic_armor=1,
+                attack=40,
+                critrate=20, critdmg=1.4,
+                base_magic=25,
+                speed=1.0,
+                accuracy=0.9,
+                spare_max=24,
+            ),
+            "Фрогетта": Enemy(
+                name="Фрогетта", nameeng="Froggette",
+                base_def=5, max_hp=70,
+                base_magic_armor=1,
+                attack=70,
+                critrate=10, critdmg=2.0,
+                base_magic=1,
+                speed=1.0,
+                accuracy=0.8,
+                spare_max=30,
+            ),
+            "Фрогестер": Enemy(
+                name="Фрогестер", nameeng="Frogster",
+                base_def=10, max_hp=60,
+                base_magic_armor=1,
+                attack=25,
+                critrate=5, critdmg=1.2,
+                base_magic=1,
+                speed=1.0,
+                accuracy=0.99,
+                spare_max=30,
+            ),
+            "Фрогис": Enemy(
+                name="Фрогис", nameeng="Frogis",
+                base_def=20, max_hp=54,
+                base_magic_armor=1,
+                attack=30,
+                critrate=20, critdmg=1.4,
+                base_magic=1,
+                speed=1.0,
+                accuracy=0.7,
+                spare_max=40,
+            ),
         }
 
         if "Арчи" in enemies and "init_archie_battle_state" in globals():
             init_archie_battle_state(enemies["Арчи"])
+
+        _frogs = ("Фроглин", "Фрогетта", "Фрогестер", "Фрогис")
+        for _fname in _frogs:
+            if _fname in enemies:
+                enemies[_fname].mood = "happy"
+
+        enemies["Фроглин"].action_difficulties = {
+            "Убеждение": 2, "Рассказать": 4, "Поддержать": -1, "Играть": 2,
+            "Запугать": 3, "Грубить": 1, "Исполнение": 0, "Дразнить": 3,
+        }
+        enemies["Фрогетта"].action_difficulties = {
+            "Убеждение": 4, "Рассказать": 1, "Поддержать": 5, "Играть": 4,
+            "Запугать": 2, "Грубить": 6, "Исполнение": 1, "Дразнить": 3,
+        }
+        enemies["Фрогестер"].action_difficulties = {
+            "Убеждение": 2, "Рассказать": 4, "Поддержать": 2, "Играть": 1,
+            "Запугать": 0, "Грубить": -2, "Исполнение": 0, "Дразнить": 3,
+        }
+        enemies["Фрогис"].action_difficulties = {
+            "Убеждение": 2, "Рассказать": 4, "Поддержать": 1, "Играть": 2,
+            "Запугать": 5, "Грубить": 5, "Исполнение": 0, "Дразнить": -2,
+        }
 
         # Индивидуальные словари модификаторов сложности для каждого врага
         enemy_mood_mods = {

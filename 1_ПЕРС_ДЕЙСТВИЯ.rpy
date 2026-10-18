@@ -965,6 +965,10 @@ label act_dispatch(action_name):
         if target.name == "Арчи":
             $ apply_act_to_enemy(target, action_name, try_to_nego_result)
             $ archie_apply_act(target, attacker, action_name, try_to_nego_result)
+        elif target.name in ("Фроглин", "Фрогетта", "Фрогестер", "Фрогис"):
+            $ apply_act_to_enemy(target, action_name, try_to_nego_result)
+            $ frog_apply_act(target, attacker, action_name, try_to_nego_result)
+            $ renpy.notify("[target.name]: [target.spare_progress]/[target.spare_max]")
         else:
             $ apply_enemy_act_mechanics(action_name)
 
@@ -1180,11 +1184,59 @@ default mood_action_spare_effects_by_char = {
         },
     },
 
-    # Шаблон для других врагов — оставь пустым или дополни по мере надобности.
-    "ДжевилV1": {},
-    "Психолог": {},
-    "Спамтон":  {},
-    "Арчи":     {},
+     # Шаблон для других врагов — оставь пустым или дополни по мере надобности.
+     "ДжевилV1": {},
+     "Психолог": {},
+     "Спамтон":  {},
+     "Арчи":     {},
+     "Фроглин": {
+         "happy": {
+             "Убеждение":  {"default":  1},
+             "Рассказать": {"default":  1},
+             "Поддержать": {"default":  0},
+             "Играть":     {"default":  1},
+             "Запугать":   {"default": -1},
+             "Грубить":    {"default": -1},
+             "Исполнение": {"default":  0},
+             "Дразнить":   {"default":  0},
+         },
+     },
+     "Фрогетта": {
+         "happy": {
+             "Убеждение":  {"default":  0},
+             "Рассказать": {"default":  0},
+             "Поддержать": {"default":  1},
+             "Играть":     {"default":  1},
+             "Запугать":   {"default": -1},
+             "Грубить":    {"default": -1},
+             "Исполнение": {"default":  0},
+             "Дразнить":   {"default":  1},
+         },
+     },
+     "Фрогестер": {
+         "happy": {
+             "Убеждение":  {"default":  0},
+             "Рассказать": {"default":  0},
+             "Поддержать": {"default":  1},
+             "Играть":     {"default":  1},
+             "Запугать":   {"default": -1},
+             "Грубить":    {"default": -1},
+             "Исполнение": {"default":  1},
+             "Дразнить":   {"default": -1},
+         },
+     },
+     "Фрогис": {
+         "happy": {
+             "Убеждение":  {"default": -1},
+             "Рассказать": {"default":  0},
+             "Поддержать": {"default":  0},
+             "Играть":     {"default":  0},
+             "Запугать":   {"default":  0},
+             "Грубить":    {"default": -1},
+             "Исполнение": {"default":  0},
+             "Дразнить":   {"default": -1},
+         },
+     },
 }
 
 # Список допустимых настроений (используется для инициализации словарей)

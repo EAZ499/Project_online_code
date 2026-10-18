@@ -2579,7 +2579,7 @@ screen mtob:
 default enemytoatkchosen = 0
 
 default attackindex = None
-default battlenumber = 10
+default battlenumber = 20
 default enemycombatsubject = None
 default enemycount = None
 
