@@ -232,9 +232,9 @@ init python:
 
         "Фрогетта": {
             "permanent": [
-                ("Больно не будет!", "С шансом = крит-шанс Фрогетты обнуляет HP персонажа."),
-                ("А я могу сильнее!", "Каждый раз, когда она получает урон, увеличивает свою бонусную атаку на 20%."),
-                ("Готовка к удару",  "Каждый раунд увеличивает точность и крит-шанс на +5% себе и +2% союзникам."),
+                ("Больно не будет!", "Каждая атака Фрогетты может убить персонажа с шансом, равным её крит.шансу."),
+                ("А я могу сильнее!", "Каждый раз, когда получает урон, увеличивает свою бонусную атаку на 20%."),
+                ("Готовка к удару",  "Каждый раунд увеличивает точность и крит-шанс +5% себе и +2% союзникам."),
             ],
             "mood": {
                 "neutral":    [("—", "Нет особых эффектов настроения.")],
@@ -248,7 +248,7 @@ init python:
             },
         },
 
-         "Фрогис": {
+        "Фрогис": {
             "permanent": [
                 ("Не особо-то и хотелось", "Из-за нежелания драться Фрогестер получает в конце каждого хода 15% от своего максимального значения пощады."),
                 ("Милое пузеко",           "Оно такое желейное, что не хочется по нему бить. −10% от атаки атакующему персонажу после нанесения урона по Фрогестеру."),
@@ -457,24 +457,32 @@ init python:
             return []
 
         result = []
+        initial_stats = getattr(enemy, "initial_stats", {}) or {}
         table = [
-            # (attr, иконка_дебаффа, иконка_баффа)
-            ("bloodshed_debuff", "bloodshed.png",            "healing.png"),
-            ("prone_debuff",     "prone.png",                "antiprone.png"),
-            ("atk_debuff",       "atk_red_icon.png",         "atk_green_icon.png"),
-            ("def_debuff",       "def_red_icon.png",         "def_green_icon.png"),
-            ("magic_debuff",     "mag_red_icon.png",         "mag_green_icon.png"),
-            ("accuracy_debuff",  "dmgchance_red_icon.png",   "dmgchance_green_icon.png"),
-            ("critrate_debuff",  "critrate_red_icon.png",    "critrate_green_icon.png"),
-            ("critdmg_debuff",   "critdmg_red_icon.png",     "critdmg_green_icon.png"),
-            ("tank_debuff",      "tank_red_icon.png",        "tank_green_icon.png"),
+            # (эффект, иконка_дебаффа, иконка_баффа, характеристика)
+            ("bloodshed_debuff", "bloodshed.png",          "healing.png",          None),
+            ("prone_debuff",     "prone.png",              "antiprone.png",        None),
+            ("atk_debuff",       "atk_red_icon.png",       "atk_green_icon.png",   "atk"),
+            ("def_debuff",       "def_red_icon.png",       "def_green_icon.png",   "defense"),
+            ("magic_debuff",     "mag_red_icon.png",       "mag_green_icon.png",   "magic"),
+            ("accuracy_debuff",  "dmgchance_red_icon.png", "dmgchance_green_icon.png", "dmgchance"),
+            ("critrate_debuff",  "critrate_red_icon.png",  "critrate_green_icon.png",  "critrate"),
+            ("critdmg_debuff",   "critdmg_red_icon.png",   "critdmg_green_icon.png",   "crit"),
+            ("tank_debuff",      "tank_red_icon.png",      "tank_green_icon.png",      "total_tank"),
         ]
-        for attr, pos_icon, neg_icon in table:
+        for attr, pos_icon, neg_icon, stat_key in table:
             val = getattr(enemy, attr, 0)
-            if val > 0:
-                result.append((pos_icon, False))   # красный = дебафф
-            elif val < 0:
-                result.append((neg_icon, True))    # зелёный = бафф
+            if not val:
+                continue
+
+            # Для числовых характеристик цвет определяется реальным текущим
+            # значением относительно снимка, сделанного при инициализации.
+            is_buff = False
+            if stat_key is not None and stat_key in initial_stats:
+                current = getattr(enemy, stat_key, 0)
+                is_buff = current > initial_stats[stat_key]
+
+            result.append((pos_icon if val > 0 else neg_icon, is_buff))
         return result
 
     # ============================================================

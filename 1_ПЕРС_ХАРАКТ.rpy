@@ -2378,6 +2378,21 @@ init python:
                 "spare_progress_action": 0,
             }
 
+            # Снимок начальных характеристик для enemydesc.
+            # Важно: делать это В САМОМ КОНЦЕ __init__, когда все поля уже заданы,
+            # иначе обращения к atk/magic/defense упадут на ещё не созданных полях.
+            self.initial_stats = {
+                "atk": self.atk,
+                "magic": self.magic,
+                "defense": self.defense,
+                "dmgchance": self.dmgchance,
+                "critrate": self.critrate,
+                "crit": self.crit,
+                "total_tank": self.total_tank,
+                "max_hp": self.max_hp,
+                "max_mp": self.max_mp,
+            }
+
 
         def debuff(self, prefix, value, first_bonus=1):
             """Накладывает дебафф по короткому префиксу, например ``debuff("prone", 1)``."""
@@ -2391,7 +2406,7 @@ init python:
 
         def __setstate__(self, state):
             """Метод для восстановления состояния объекта при десериализации"""
-            self.__dict__.updatfirst_turn_dialoguee(state)
+            self.__dict__.update(state)
             if 'base_atk_mod2' not in self.__dict__:
                 self.base_atk_mod2 = 0.0
             elif self.__dict__.get('base_atk_mod2') == 1.0:
@@ -2425,6 +2440,19 @@ init python:
                 self.next_attack_damage_multiplier = 1.0
             if '_kris_atk3_difficulty' not in self.__dict__:
                 self._kris_atk3_difficulty = 0.0
+
+            if "initial_stats" not in self.__dict__:
+                self.initial_stats = {
+                    "atk": self.atk,
+                    "magic": self.magic,
+                    "defense": self.defense,
+                    "dmgchance": self.dmgchance,
+                    "critrate": self.critrate,
+                    "crit": self.crit,
+                    "total_tank": self.total_tank,
+                    "max_hp": self.max_hp,
+                    "max_mp": self.max_mp,
+                }
 
             if "route" not in self.__dict__:
                 self.route = None

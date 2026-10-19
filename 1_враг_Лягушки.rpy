@@ -303,6 +303,7 @@ init python:
         chance = float(getattr(f, "critrate", 0.0) or 0.0)
         if renpy.random.random() < chance:
             target_hero.current_hp = 0
+            target_hero.shield = 0
             renpy.notify("Фрогетта: «Больно не будет!»")
             return True
         return False
