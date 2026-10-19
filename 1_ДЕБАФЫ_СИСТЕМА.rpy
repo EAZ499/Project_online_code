@@ -1336,9 +1336,7 @@ screen heroes_attacked_visual():
                                         elif char.def_debuff_got < 0:
                                             add "def_green_icon.png" size (30, 30) at damage_gradient_green
                                     
-                                    if char == store.pers_dict['Крис'] or char == store.pers_dict['Чара'] or char == store.pers_dict['Седрик'] or char == store.pers_dict['Фриск']:
-                                        pass
-                                    else:
+                                    if char not in (store.pers_dict['Крис'], store.pers_dict['Чара'], store.pers_dict['Седрик'], store.pers_dict['Фриск']):
                                         if char.magic_debuff_got != 0:
                                             if char.magic_debuff_got > 0:
                                                 add "mag_red_icon.png" size (30, 30) at damage_gradient

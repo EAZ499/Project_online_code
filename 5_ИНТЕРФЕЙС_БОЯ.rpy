@@ -2433,7 +2433,7 @@ screen itoc:
         add "switcher.png" xpos 1025 ypos 508 at switcher_turn
 
         add "con_item.png" xpos 1025 ypos 508 at itemtype2_icon_dis
-        add "wep_item.png" xpos 1025 ypos 508 at itemtype2_icon_app
+        add "wep_item.png" xpos 1025 ypos 508 at itemtype2_icon_app 
 
     if itemtype == 4:
         frame:

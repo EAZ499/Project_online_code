@@ -2238,7 +2238,10 @@ init python:
                     if not hasattr(entity, attr_name):
                         continue
                     old_value = getattr(entity, attr_name)
-                    new_value = max(0.0, old_value + delta)
+                    if attr_name in ("bonus_magic", "bonus_magic2"):
+                        new_value = old_value + delta
+                    else:
+                        new_value = max(0.0, old_value + delta)
                     setattr(entity, attr_name, round(new_value, 2))
 
             # >0 — дебафф (снижаем), <0 — бафф (повышаем)

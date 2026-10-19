@@ -62,6 +62,12 @@ label perform_item:
                 $ store.consumable_inventory[attackindex] = store.consumable_inventory.get(attackindex, 0) - 1
                 if store.consumable_inventory.get(attackindex, 0) <= 0:
                     $ store.consumable_inventory.pop(attackindex, None)
+                # Пассивка Фроглин «Делёжка» должна срабатывать и тогда,
+                # когда расходник с маной используют на враге (например,
+                # мороженое на самой Фроглин), а не только на союзниках.
+                if hasattr(store, "frog_on_consumable_used"):
+                    $ _frog_item_fx = store.get_consumable_item_effects_level1(attackindex) if hasattr(store, "get_consumable_item_effects_level1") else {}
+                    $ frog_on_consumable_used(attacker, attackindex, _frog_item_fx)
         elif hasattr(target, "use_consumable"):
             $ target.use_consumable(attackindex)
         else:

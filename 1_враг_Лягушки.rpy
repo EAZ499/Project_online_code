@@ -193,28 +193,54 @@ init python:
     # ----------------------------------------------------------------
     # frog_try_pride_override уже определён выше.
 
-    # ----------------------------------------------------------------
-    # ПАССИВКА «МАГИЧЕСКАЯ АУРА» ФРОГЛИН — вызывается в начале боя
-    # ----------------------------------------------------------------
-    def frog_apply_magic_aura_on_battle_start():
-        """-5% bonus_magic всем героям, +5% самой Фроглин."""
+
+
+# ----------------------------------------------------------------
+# ПАССИВКА «МАГИЧЕСКАЯ АУРА» ФРОГЛИН 
+# ----------------------------------------------------------------
+    def frog_magic_aura_round_tick():
+        """«Магическая аура» в конце раунда.
+
+        Фактический эффект (накопительно): +15% bonus_magic Фроглин,
+        -5% bonus_magic героям.
+        Визуал:
+          - heroes_attacked_visual смотрит на *_got
+            (<0 -> зелёная иконка, >0 -> красная);
+          - enemydesc (если он смотрит на magic_debuff) —
+            выставляем magic_debuff = -1.
+        Возвращает True, если эффект применён.
+        """
         f = frog_enemy_by_name("Фроглин")
-        if f is None: return
-        f.bonus_magic = float(getattr(f, "bonus_magic", 0.0)) + 0.05
+        if f is None:
+            return False
+
+        # 1) Реальный накопительный эффект для Фроглин
+        f.bonus_magic = float(getattr(f, "bonus_magic", 0.0)) + 0.08
+
+        # 2) Визуал Фроглин: зелёная иконка магии
+        f.magic_debuff_got = int(getattr(f, "magic_debuff_got", 0) or 0) - 3
+        # и для enemydesc, если он смотрит на magic_debuff
+        f.magic_debuff = int(getattr(f, "magic_debuff", 0) or 0) - 1
+
+        # 3) Герои: реальный упадок + красная иконка
         for char in (getattr(store, "pers_dict", {}) or {}).values():
             if getattr(char, "picked", 0) == 1 and getattr(char, "current_hp", 0) > 0:
-                char.bonus_magic = max(0.0, float(getattr(char, "bonus_magic", 0.0)) - 0.05)
+                char.bonus_magic = float(getattr(char, "bonus_magic", 0.0)) - 0.05
+                char.magic_debuff_got = int(getattr(char, "magic_debuff_got", 0) or 0) + 1
+                renpy.notify("{}: magic_debuff_got={}".format(char.name, char.magic_debuff_got))  # отладка
+
+        return True
 
     # ----------------------------------------------------------------
     # ПАССИВКА «МАГИЧЕСКАЯ ВРЕДНОСТЬ» ФРОГЛИН
-    # Каждый ход −2 MP всем персонажам.
+    # Каждый ход −6 MP всем персонажам.
     # ----------------------------------------------------------------
     def frog_magic_harm_tick():
         f = frog_enemy_by_name("Фроглин")
         if f is None: return
         for char in (getattr(store, "pers_dict", {}) or {}).values():
             if getattr(char, "picked", 0) == 1 and getattr(char, "current_hp", 0) > 0:
-                char.current_mp = max(0, int(getattr(char, "current_mp", 0)) - 2)
+                char.current_mp = max(0, int(getattr(char, "current_mp", 0)) - 6)
 
     # ----------------------------------------------------------------
     # ПАССИВКА «ДЕЛЁЖКА» ФРОГЛИН
@@ -225,7 +251,11 @@ init python:
         if f is None: return
         effects = effects or {}
         if int(effects.get("mp_heal", 0) or 0) > 0:
-            f.bonus_magic = float(getattr(f, "bonus_magic", 0.0)) + 0.10
+            f.bonus_magic = float(getattr(f, "bonus_magic", 0.0)) + 0.15
+            # Визуал как у «Магической ауры»: зелёная иконка магии
+            # в бою и бафф магии в ENEMYDESC.
+            f.magic_debuff_got = int(getattr(f, "magic_debuff_got", 0) or 0) - 3
+            f.magic_debuff = int(getattr(f, "magic_debuff", 0) or 0) - 1
             renpy.notify("Фроглин: +10% магии за расходник маны")
 
     # ----------------------------------------------------------------
@@ -320,3 +350,61 @@ init python:
                 if ally is None: continue
                 frog_mod_accuracy(ally, 0.02)
                 frog_mod_critrate(ally, 0.02)
+
+    # ----------------------------------------------------------------
+    # ПРЕДВАРИТЕЛЬНЫЙ ОСМОТР ЛЯГУШЕК (battlenumber == 20)
+    # Ставит всем живым лягушкам «Осмотрено 5 раз», как будто игрок
+    # пять раз успешно применил «Оценить» ещё до первого хода.
+    #
+    # Три штуки, которые читает UI/боёвка:
+    #   1) evaluate_success_count = 5  — уровень осмотра в ENEMYDESC:
+    #      раскрывает пассивки и точный HP (потолок 5 стоит в apply_act_to_enemy);
+    #   2) action_progress["evaluate_progress"] = 5 — прогресс самого действия;
+    #   3) mood_action_revealed[mood][act] = True + mood_action_used["Оценить"]
+    #      — get_act_button_color() рисует кнопки ACT цветом эффекта,
+    #      а не белым «как будто не нажимали».
+    #
+    # spare_progress НЕ трогается: предосмотр не приближает пощаду.
+    # Перебор идёт по "store.ACTS_CONFIG" — так же, как в
+    # reveal_random_acts_to_enemy(), поэтому набор раскрытых действий
+    # совпадает с реальным осмотром.
+    # ----------------------------------------------------------------
+    FROG_EVALUATE_TARGET = 5   # = кэп evaluate_success_count в apply_act_to_enemy
+
+    def mark_frogs_checked_from_start():
+        enemies = getattr(store, "enemies", {}) or {}
+        checked = []
+        # list(): словари намеренно не создаём/не меняем структуру на ходу.
+        for fname in list(FROG_NAMES):
+            frog = enemies.get(fname)
+            if frog is None or getattr(frog, "current_hp", 0) <= 0:
+                continue
+
+            # 1) Счётчик успешных осмотров (максимум).
+            frog.evaluate_success_count = FROG_EVALUATE_TARGET
+
+            # 2) Прогресс действия «Оценить».
+            if not isinstance(getattr(frog, "action_progress", None), dict):
+                frog.action_progress = {}
+            frog.action_progress["evaluate_progress"] = FROG_EVALUATE_TARGET
+
+            # 3) Журналы настроений: гарантируем все 8 настроений.
+            #    Лягушки стартуют в "happy" (см. блок _frogs в make_enemies),
+            #    но если настроение уже сменилось — красим текущее.
+            _ensure_mood_action_used(frog)
+            mood = getattr(frog, "mood", "happy")
+            frog.mood_action_used.setdefault(mood, {})["Оценить"] = True
+            for _act in list(store.ACTS_CONFIG.keys()):
+                if _act in ("Оценить", "Пощадить"):
+                    continue
+                frog.mood_action_revealed.setdefault(mood, {})[_act] = True
+
+            checked.append(fname)
+        return checked
+
+
+# Лейбл для вызова из боя: call mark_frogs_checked_from_start
+label mark_frogs_checked_from_start:
+    if battlenumber == 20:
+        $ _frog_checked = mark_frogs_checked_from_start()
+    return

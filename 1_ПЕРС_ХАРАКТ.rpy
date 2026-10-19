@@ -1949,6 +1949,13 @@ init python:
         return applied_value
 
 
+    # Плоская база для процентных бонусов/дебаффов магии у противников.
+    # Раньше: base_magic * bonus_magic2 (15% от 25 = 3.75).
+    # Теперь: 100 * bonus_magic2 (15% от 100 = 15).
+    # Это делает любые ±5% / ±15% заметными независимо от уровня врага.
+    ENEMY_MAGIC_PERCENT_FLAT_BASE = 100
+
+
     class Enemy:
         def __init__(self, name, nameeng, base_def, base_magic_armor, max_hp, attack, critrate=5, critdmg=1.5,
                     atk_debuffchance=0, def_debuffchance=0, critrate_debuffchance=0,
@@ -2546,8 +2553,8 @@ init python:
         def magic(self):
             return max(int(round(
                 (self.base_magic + self.base_magic_mod) +
-                (self.base_magic * self.bonus_magic2) +
-                (self.base_magic * (self.magic_debuff_var - 1))
+                (ENEMY_MAGIC_PERCENT_FLAT_BASE * self.bonus_magic2) +
+                (ENEMY_MAGIC_PERCENT_FLAT_BASE * (self.magic_debuff_var - 1))
             )), 0)
 
         @property
@@ -2585,7 +2592,7 @@ init python:
 
         @bonus_magic.setter
         def bonus_magic(self, value):
-            self.bonus_magic2 = max(value, 0)
+            self.bonus_magic2 = value
 
         @property
         def magic_debuff_var(self):
@@ -3484,27 +3491,27 @@ init python:
 
         @property
         def base_magic_mod(self):
-            return max(self.base_magic_mod2, 0)
+            return self.base_magic_mod2
 
         @base_magic_mod.setter
         def base_magic_mod(self, value):
-            self.base_magic_mod2 = max(value, 0)
+            self.base_magic_mod2 = value
 
         @property
         def bonus_magic(self):
-            return max(self.bonus_magic2, 0)
+            return self.bonus_magic2
 
         @bonus_magic.setter
         def bonus_magic(self, value):
-            self.bonus_magic2 = max(value, 0)
+            self.bonus_magic2 = value
 
         @property
         def bonus_magic_mod(self):
-            return max(self.bonus_magic_mod2, 0)
+            return self.bonus_magic_mod2
 
         @bonus_magic_mod.setter
         def bonus_magic_mod(self, value):
-            self.bonus_magic_mod2 = max(value, 0)
+            self.bonus_magic_mod2 = value
 
 
         @property
@@ -9244,10 +9251,15 @@ init python:
         if "Арчи" in enemies and "init_archie_battle_state" in globals():
             init_archie_battle_state(enemies["Арчи"])
 
-        _frogs = ("Фроглин", "Фрогетта", "Фрогестер", "Фрогис")
-        for _fname in _frogs:
+        _frog_moods = {
+            "Фроглин":   "neutral",
+            "Фрогетта":  "happy",
+            "Фрогестер": "angry",
+            "Фрогис":    "thoughtful",
+        }
+        for _fname, _mood in _frog_moods.items():
             if _fname in enemies:
-                enemies[_fname].mood = "happy"
+                enemies[_fname].mood = _mood
 
         enemies["Фроглин"].action_difficulties = {
             "Убеждение": 2, "Рассказать": 4, "Поддержать": -1, "Играть": 2,

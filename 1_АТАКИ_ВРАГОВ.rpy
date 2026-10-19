@@ -519,6 +519,7 @@ label afterenemyattack:
     $ archie_tick_all()
     $ frog_magic_harm_tick()
     $ frog_on_battle_round_tick()
+    $ _frog_aura_applied = frog_magic_aura_round_tick()
     $ sedric_on_round_end()
     # Фабри: перезарядка магии фамильяров сбрасывается 1 раз за раунд
     # ВСЕГДА, независимо от того, жив фамильяр или нет. Здесь же идёт
@@ -537,6 +538,10 @@ label afterenemyattack:
     python:
         for _char in store.pers_dict.values():
             _char.step_forward = 0
+
+    if _frog_aura_applied:
+        hide screen heroes_attacked_visual
+        show screen heroes_attacked_visual
 
     # ШАГ 3: Пауза ТОЛЬКО после полной остановки физики
     $ renpy.pause(2.0, hard=True)

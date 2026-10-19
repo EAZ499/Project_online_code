@@ -93,7 +93,10 @@ label fightbegin12:
     $ archie_reset_battle_passives()
     $ sedric_reset_battle_passives()
     $ init_all_frogs_battle_state()
-    $ frog_apply_magic_aura_on_battle_start()
+
+    # Лягушки «осмотрены 5 раз» ещё до первого хода (только battlenumber == 20):
+    # раскрывает пассивки/HP в описании и красит кнопки ACT как при реальном осмотре.
+    call mark_frogs_checked_from_start
 
     # Пассивки Азриеля на новый бой: облик по умолчанию, «Образ принца»,
     # «Рука помощи», огневые шансы и накопленные бонусы защиты/танка.

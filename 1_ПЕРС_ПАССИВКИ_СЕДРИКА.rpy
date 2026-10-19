@@ -253,7 +253,7 @@ init python:
                     elif stat == "dmgchance":
                         char.bonus_dmgchance -= val
                     elif stat == "magic":
-                        char.bonus_magic = max(0.0, char.bonus_magic - val)
+                        char.bonus_magic -= val
                     elif stat == "crit":
                         char.bonus_crit = max(-0.9, char.bonus_crit - val)
                     elif stat == "critrate":
@@ -275,7 +275,7 @@ init python:
                 elif stat == "dmgchance":
                     char.bonus_dmgchance -= val
                 elif stat == "magic":
-                    char.bonus_magic = max(0.0, char.bonus_magic - val)
+                    char.bonus_magic -= val
                 elif stat == "crit":
                     char.bonus_crit = max(-0.9, char.bonus_crit - val)
                 elif stat == "critrate":
