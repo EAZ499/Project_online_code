@@ -470,19 +470,31 @@ init python:
             ("critdmg_debuff",   "critdmg_red_icon.png",   "critdmg_green_icon.png",   "crit"),
             ("tank_debuff",      "tank_red_icon.png",      "tank_green_icon.png",      "total_tank"),
         ]
+
         for attr, pos_icon, neg_icon, stat_key in table:
             val = getattr(enemy, attr, 0)
-            if not val:
-                continue
-
-            # Для числовых характеристик цвет определяется реальным текущим
-            # значением относительно снимка, сделанного при инициализации.
+            stat_changed = False
             is_buff = False
+            icon = None
+
+            # 1. Сначала проверяем фактическое изменение характеристики.
             if stat_key is not None and stat_key in initial_stats:
                 current = getattr(enemy, stat_key, 0)
-                is_buff = current > initial_stats[stat_key]
+                initial = initial_stats[stat_key]
+                if current != initial:
+                    stat_changed = True
+                    is_buff = current > initial
+                    icon = neg_icon if is_buff else pos_icon
 
-            result.append((pos_icon if val > 0 else neg_icon, is_buff))
+            # 2. Если характеристика ещё не пересчиталась, но счётчик дебаффа
+            #    уже ненулевой — показываем иконку по знаку счётчика.
+            if not stat_changed and val != 0:
+                is_buff = val < 0          # отрицательный счётчик = бафф
+                icon = pos_icon if val > 0 else neg_icon
+
+            if icon is not None:
+                result.append((icon, is_buff))
+
         return result
 
     # ============================================================
@@ -597,10 +609,13 @@ screen enemydesc():
             padding (5, 5)
 
             frame:
-                xfill True
-                yfill True
+                #xfill True
+                #yfill True
+                xysize (1050, 680)
+                xalign (0.5)
+                yalign (0.5)
                 background "#000000"
-                padding (14, 14)
+                #padding (14, 14)
 
                 hbox:
                     spacing 20
