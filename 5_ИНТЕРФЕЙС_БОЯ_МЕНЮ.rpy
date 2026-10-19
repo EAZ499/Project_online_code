@@ -1920,6 +1920,28 @@ screen actchoice1():
     if act_section_switch_locked:
         timer 0.25 action Function(finish_battle_menu_section_switch, "act") repeat False
 
+    hbox:
+        xpos 600
+        ypos 360
+        spacing 15
+        textbutton " - ":
+            text_font "determination.otf"
+            text_size 26
+            text_color "#ff6666"
+            text_hover_color "#ffffff"
+            action Function(change_frogs_evaluate_level, -1)
+        text "[get_frogs_evaluate_display()]":
+            font "determination.otf"
+            size 26
+            color "#ffff00"
+            yalign 0.5
+        textbutton " + ":
+            text_font "determination.otf"
+            text_size 26
+            text_color "#66ff66"
+            text_hover_color "#ffffff"
+            action Function(change_frogs_evaluate_level, 1)
+
     # ==========================================================
     # СЕКЦИЯ 1
     # ==========================================================

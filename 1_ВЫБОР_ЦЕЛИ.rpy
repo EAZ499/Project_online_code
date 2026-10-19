@@ -1786,6 +1786,9 @@ screen turntarget:
         else:
             $ renpy.log("DEBUG: Цель не выбрана, остаемся на экране выбора цели")
 
+
+
+
     if turntype == "toenemy" or turntype == "tochar" or turntype == "heroacts" or turntype == 0 or turntype == "totarget":
         use targettochoose
     elif turntype == "cook":
@@ -1824,7 +1827,7 @@ screen targettochoose_sprites_placeholders:
     if actchoice == 1 and not (target is not None and attackindex is not None) and choose_attacker_active == 0:
         for enemy_name, (ex, ey) in debug_enemy_coords.items():
             $ enemy_obj = store.enemies.get(enemy_name) if hasattr(store, "enemies") else None
-            if enemy_obj is not None:
+            if enemy_obj is not None and getattr(enemy_obj, "evaluate_success_count", 0) >= 2:
                 $ spare_max_val = max(1.0, float(getattr(enemy_obj, "spare_max", 100)))
                 $ spare_ratio = max(0.0, min(1.0, float(getattr(enemy_obj, "spare_progress", 0)) / spare_max_val))
                 $ spare_fill_w = int(50 * spare_ratio)
@@ -3119,7 +3122,7 @@ screen targettochoose_sprites_placeholders:
     if actchoice == 1 and not (target is not None and attackindex is not None) and choose_attacker_active == 0:
         for enemy_name, (ex, ey) in debug_enemy_coords.items():
             $ enemy_obj = store.enemies.get(enemy_name) if hasattr(store, "enemies") else None
-            if enemy_obj is not None:
+            if enemy_obj is not None and getattr(enemy_obj, "evaluate_success_count", 0) >= 2:
                 $ spare_max_val = max(1.0, float(getattr(enemy_obj, "spare_max", 100)))
                 $ spare_ratio = max(0.0, min(1.0, float(getattr(enemy_obj, "spare_progress", 0)) / spare_max_val))
                 $ spare_fill_w = int(50 * spare_ratio)

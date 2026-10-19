@@ -48,15 +48,15 @@ init python:
         return None
 
     # ----------------------------------------------------------------
-    # «ИСКЛЮЧИТЕЛЬНАЯ УПЁРТОСТЬ» ФРОГИСА
-    # Шанс = крит-шанс Фрогиса превратить успех в провал.
+    # «ИСКЛЮЧИТЕЛЬНАЯ УПЁРТОСТЬ» ФРОГЕСТЕРА
+    # Шанс = крит-шанс Фрогестера превратить успех в провал.
     # ----------------------------------------------------------------
     def frog_try_pride_override(enemy):
-        if enemy is None or getattr(enemy, "name", None) != "Фрогис":
+        if enemy is None or getattr(enemy, "name", None) != "Фрогестер":
             return False
         chance = float(getattr(enemy, "critrate", 0.0) or 0.0)
         if renpy.random.random() < chance:
-            renpy.notify("Фрогис упёрся: успех превращён в провал!")
+            renpy.notify("Фрогестер упёрся: успех превращён в провал!")
             return True
         return False
 
@@ -69,20 +69,20 @@ init python:
 
     def frog_mod_accuracy(enemy, delta):
         if enemy is None: return
-        enemy.accuracy_debuff_var = max(-0.5, float(getattr(enemy, "accuracy_debuff_var", 0.0)) + delta)
+        enemy.bonus_dmgchance2 = max(-0.5, float(getattr(enemy, "bonus_dmgchance2", 0.0)) + delta)
 
     def frog_mod_critrate(enemy, delta):
         if enemy is None: return
-        enemy.critrate_debuff_var = max(-0.5, float(getattr(enemy, "critrate_debuff_var", 0.0)) + delta)
+        enemy.bonus_critrate2 = max(-0.5, float(getattr(enemy, "bonus_critrate2", 0.0)) + delta)
 
     def frog_mod_critdmg(enemy, delta):
         if enemy is None: return
-        enemy.critdmg_debuff_var = max(-0.5, float(getattr(enemy, "critdmg_debuff_var", 0.0)) + delta)
+        enemy.bonus_crit2 = max(-0.5, float(getattr(enemy, "bonus_crit2", 0.0)) + delta)
 
     def frog_mod_def_flat(enemy, delta):
-        """Снижение итоговой защиты через def_debuff_var (множитель)."""
+        """Снижение итоговой защиты через bonus_def."""
         if enemy is None: return
-        enemy.def_debuff_var = max(0.0, float(getattr(enemy, "def_debuff_var", 1.0)) - delta)
+        enemy.bonus_def = float(getattr(enemy, "bonus_def", 0.0)) - delta
 
     def frog_rollback_spare(enemy, attacker_name, multiplier):
         """Откатывает spare_progress на multiplier * diplomacy атакующего."""
@@ -176,16 +176,23 @@ init python:
             frog_rollback_spare(enemy, getattr(attacker, "name", None), result["rollback"])
         if result.get("atk"):
             frog_mod_atk(enemy, result["atk"])
+            enemy.atk_debuff_got = int(getattr(enemy, "atk_debuff_got", 0) or 0) - (1 if result["atk"] > 0 else -1)
         if result.get("critrate"):
             frog_mod_critrate(enemy, result["critrate"])
+            enemy.critrate_debuff_got = int(getattr(enemy, "critrate_debuff_got", 0) or 0) - (1 if result["critrate"] > 0 else -1)
         if result.get("critdmg"):
             frog_mod_critdmg(enemy, result["critdmg"])
+            enemy.critdmg_debuff_got = int(getattr(enemy, "critdmg_debuff_got", 0) or 0) - (1 if result["critdmg"] > 0 else -1)
         if result.get("accuracy"):
             frog_mod_accuracy(enemy, result["accuracy"])
+            enemy.accuracy_debuff_got = int(getattr(enemy, "accuracy_debuff_got", 0) or 0) - (1 if result["accuracy"] > 0 else -1)
         if result.get("def"):
             frog_mod_def_flat(enemy, result["def"])
+            # frog_mod_def_flat вычитает delta из bonus_def -> положительный delta = дебафф
+            enemy.def_debuff_got = int(getattr(enemy, "def_debuff_got", 0) or 0) + (1 if result["def"] > 0 else -1)
         if result.get("dmg_bonus"):
             frog_mod_atk(enemy, result["dmg_bonus"])
+            enemy.atk_debuff_got = int(getattr(enemy, "atk_debuff_got", 0) or 0) - (1 if result["dmg_bonus"] > 0 else -1)
 
     # ----------------------------------------------------------------
     # ПАССИВКА «ИСКЛЮЧИТЕЛЬНАЯ УПЁРТОСТЬ» — вызывается из try_to_nego()
@@ -263,30 +270,51 @@ init python:
     # Каждый раз, когда она получает урон — +20% атаки.
     # ----------------------------------------------------------------
     def frog_on_damage_taken(enemy, old_hp, new_hp):
-        if enemy is None: return new_hp
+        if enemy is None:
+            return new_hp
         if new_hp < old_hp:
-            if getattr(enemy, "name", None) == "Фрогетта":
+            name = getattr(enemy, "name", None)
+
+            if name == "Фрогетта":
+                # «А я могу сильнее!» — +20% атаки при получении урона
                 enemy.bonus_atk = float(getattr(enemy, "bonus_atk", 0.0)) + 0.20
-            elif getattr(enemy, "name", None) == "Фрогис":
-                # «Видите? Они злодеи!» — сам Фрогис и все его атакующие
-                enemy.atk_debuff = int(getattr(enemy, "atk_debuff", 0)) + 2
-                enemy.critdmg_debuff_var = float(getattr(enemy, "critdmg_debuff_var", 0.0)) + 0.10
-                attacker = None
+                # бафф атаки — зелёная иконка
+                enemy.atk_debuff_got = int(getattr(enemy, "atk_debuff_got", 0) or 0) - 1
+
+            elif name == "Фрогестер":
+                # «Видите? Они злодеи!»
+                # Фрогестер: +2 стака истощения, +10% крит-урона
+                enemy.atk_debuff = int(getattr(enemy, "atk_debuff", 0)) - 2
+                # +2 дебаффа атаки — красная ×2
+                enemy.atk_debuff_got = int(getattr(enemy, "atk_debuff_got", 0) or 0) - 2
+                enemy.bonus_crit2 = float(getattr(enemy, "bonus_crit2", 0.0)) + 0.10
+                # +10% крит-урона — зелёная
+                enemy.critdmg_debuff_got = int(getattr(enemy, "critdmg_debuff_got", 0) or 0) - 1
+
+                # Атакующий: +5% атаки, +5% крит-урона
                 cur = getattr(store, "current_attacker", None)
-                order = ["Крис","Азриель","Чара","Фриск","Иззи","Кловер","Седрик","Арчи","Сильвия","Фабри","Эмили","Сьюзи","Ральзей","Ноэлль","Санс","Бердли"]
+                order = ["Крис","Азриель","Чара","Фриск","Иззи","Кловер","Седрик",
+                         "Арчи","Сильвия","Фабри","Эмили","Сьюзи","Ральзей","Ноэлль","Санс","Бердли"]
                 if isinstance(cur, int) and 0 < cur <= len(order):
                     attacker = (getattr(store, "pers_dict", {}) or {}).get(order[cur - 1])
-                if attacker is not None and getattr(attacker, "current_hp", 0) > 0:
-                    attacker.bonus_atk = float(getattr(attacker, "bonus_atk", 0.0)) + 0.05
-                    attacker.bonus_crit = float(getattr(attacker, "bonus_crit", 0.0)) + 0.05
-            elif getattr(enemy, "name", None) == "Фрогестер":
-                # «Милое пузеко» — -10% атаки атакующему
+                    if attacker is not None and getattr(attacker, "current_hp", 0) > 0:
+                        attacker.bonus_atk = float(getattr(attacker, "bonus_atk", 0.0)) + 0.05
+                        attacker.atk_debuff_got = int(getattr(attacker, "atk_debuff_got", 0) or 0) - 1
+                        attacker.bonus_crit = float(getattr(attacker, "bonus_crit", 0.0)) + 0.05
+                        attacker.critdmg_debuff_got = int(getattr(attacker, "critdmg_debuff_got", 0) or 0) - 1
+
+            elif name == "Фрогис":
+                # «Милое пузеко» — −10% атаки атакующему
                 cur = getattr(store, "current_attacker", None)
-                order = ["Крис","Азриель","Чара","Фриск","Иззи","Кловер","Седрик","Арчи","Сильвия","Фабри","Эмили","Сьюзи","Ральзей","Ноэлль","Санс","Бердли"]
+                order = ["Крис","Азриель","Чара","Фриск","Иззи","Кловер","Седрик",
+                         "Арчи","Сильвия","Фабри","Эмили","Сьюзи","Ральзей","Ноэлль","Санс","Бердли"]
                 if isinstance(cur, int) and 0 < cur <= len(order):
                     att = (getattr(store, "pers_dict", {}) or {}).get(order[cur - 1])
                     if att is not None:
                         att.bonus_atk = max(0.0, float(getattr(att, "bonus_atk", 0.0)) - 0.10)
+                        # −10% атаки — красная
+                        att.atk_debuff_got = int(getattr(att, "atk_debuff_got", 0) or 0) + 1
+
         return new_hp
 
     # ----------------------------------------------------------------
@@ -309,11 +337,11 @@ init python:
         return False
 
     # ----------------------------------------------------------------
-    # ПАССИВКА «НАТОЧЕННЫЕ СТРЕЛЫ» ФРОГЕСТЕРА
+    # ПАССИВКА «НАТОЧЕННЫЕ СТРЕЛЫ» ФРОГИСА
     # Каждое попадание снарядом — +1 стак кровотечения.
     # ----------------------------------------------------------------
     def frog_frogster_bleed_on_hit(target_hero):
-        f = frog_enemy_by_name("Фрогестер")
+        f = frog_enemy_by_name("Фрогис")
         if f is None or target_hero is None: return
         target_hero.bloodshed_debuff = int(getattr(target_hero, "bloodshed_debuff", 0)) + 1
         if hasattr(target_hero, "bloodshed_debuff_got"):
@@ -325,32 +353,37 @@ init python:
     def frog_on_battle_round_tick():
         enemies = getattr(store, "enemies", {}) or {}
 
-        # «Не задобришь!» Фрогис — каждый ход −15% от spare_max
-        frogis = frog_enemy_by_name("Фрогис")
-        if frogis is not None:
-            rollback = max(1, int(getattr(frogis, "spare_max", 40) * 0.15))
-            frogis.spare_progress = max(0, int(getattr(frogis, "spare_progress", 0)) - rollback)
-
-        # «Не особо-то и хотелось» Фрогестер — +15% от spare_max в конце хода
+        # «Не задобришь!» — ФРОГЕСТЕР. Каждый ход −15% от spare_max.
         frogster = frog_enemy_by_name("Фрогестер")
         if frogster is not None:
-            regen = max(1, int(getattr(frogster, "spare_max", 30) * 0.15))
-            frogster.spare_progress = min(
-                int(getattr(frogster, "spare_max", 30)),
-                int(getattr(frogster, "spare_progress", 0)) + regen,
+            rollback = max(1, int(getattr(frogster, "spare_max", 40) * 0.15))
+            frogster.spare_progress = max(0, int(getattr(frogster, "spare_progress", 0)) - rollback)
+
+        # «Не особо-то и хотелось» — ФРОГИС. Каждый ход +15% от spare_max.
+        frogis = frog_enemy_by_name("Фрогис")
+        if frogis is not None:
+            regen = max(1, int(getattr(frogis, "spare_max", 30) * 0.15))
+            frogis.spare_progress = min(
+                int(getattr(frogis, "spare_max", 30)),
+                int(getattr(frogis, "spare_progress", 0)) + regen,
             )
 
-        # «Готовка к удару» Фрогетта — +5% accuracy/critrate себе, +2% союзникам
+        # «Готовка к удару» — Фрогетта. +5% accuracy/critrate себе, +2% союзникам.
         froggette = frog_enemy_by_name("Фрогетта")
         if froggette is not None:
             froggette.frog_warmup_stacks = int(getattr(froggette, "frog_warmup_stacks", 0)) + 1
             frog_mod_accuracy(froggette, 0.05)
+            froggette.accuracy_debuff_got = int(getattr(froggette, "accuracy_debuff_got", 0) or 0) - 1
             frog_mod_critrate(froggette, 0.05)
+            froggette.critrate_debuff_got = int(getattr(froggette, "critrate_debuff_got", 0) or 0) - 1
             for name in ("Фроглин", "Фрогестер", "Фрогис"):
                 ally = frog_enemy_by_name(name)
-                if ally is None: continue
+                if ally is None:
+                    continue
                 frog_mod_accuracy(ally, 0.02)
+                ally.accuracy_debuff_got = int(getattr(ally, "accuracy_debuff_got", 0) or 0) - 1
                 frog_mod_critrate(ally, 0.02)
+                ally.critrate_debuff_got = int(getattr(ally, "critrate_debuff_got", 0) or 0) - 1
 
     # ----------------------------------------------------------------
     # ПРЕДВАРИТЕЛЬНЫЙ ОСМОТР ЛЯГУШЕК (battlenumber == 20)
@@ -402,6 +435,43 @@ init python:
 
             checked.append(fname)
         return checked
+
+    def change_frogs_evaluate_level(delta):
+        enemies = getattr(store, "enemies", {}) or {}
+        last_val = 0
+        targets = []
+        for fname in FROG_NAMES:
+            if fname in enemies:
+                targets.append(enemies[fname])
+        if not targets:
+            targets = [e for e in enemies.values() if getattr(e, "current_hp", 0) > 0]
+        t = getattr(store, "target", None)
+        if t is not None and t not in targets:
+            targets.append(t)
+        for e in targets:
+            cur = int(getattr(e, "evaluate_success_count", 0))
+            new_val = max(0, min(5, cur + delta))
+            e.evaluate_success_count = new_val
+            if hasattr(e, "action_progress") and isinstance(e.action_progress, dict):
+                e.action_progress["evaluate_progress"] = new_val
+            if hasattr(e, "evaluate_progress"):
+                e.evaluate_progress = new_val
+            last_val = new_val
+        renpy.notify("Осмотр: %d" % last_val)
+        renpy.restart_interaction()
+
+    def get_frogs_evaluate_display():
+        enemies = getattr(store, "enemies", {}) or {}
+        for fname in FROG_NAMES:
+            if fname in enemies and getattr(enemies[fname], "current_hp", 0) > 0:
+                return str(getattr(enemies[fname], "evaluate_success_count", 0))
+        for e in enemies.values():
+            if getattr(e, "current_hp", 0) > 0:
+                return str(getattr(e, "evaluate_success_count", 0))
+        t = getattr(store, "target", None)
+        if t is not None:
+            return str(getattr(t, "evaluate_success_count", 0))
+        return "5"
 
 
 # Лейбл для вызова из боя: call mark_frogs_checked_from_start

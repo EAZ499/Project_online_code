@@ -60,6 +60,38 @@ init python:
         "power": "Власть",
     }
 
+    def calculate_action_difficulty(target, action_name):
+        """Единая точка расчёта сложности ACT-действия.
+
+        Приоритет:
+          1. action_difficulties на объекте (лягушки и любые враги с этим dict)
+          2. Арчи — отдельное дерево настроений
+          3. обычные враги — base_difficulty + модификатор текущего настроения
+        """
+        if target is None or not isinstance(action_name, str) or action_name not in ACTS_CONFIG:
+            return 0
+
+        # 1) Прямые сложности действия на объекте (лягушки)
+        _action_diffs = getattr(target, "action_difficulties", {}) or {}
+        _act_key = {"Убедить": "Убеждение", "Исполнить": "Исполнение"}.get(action_name, action_name)
+        if _act_key in _action_diffs:
+            return int(_action_diffs[_act_key])
+
+        # 2) Арчи — своё дерево настроений
+        if getattr(target, "name", None) == "Арчи" and "archie_difficulty" in globals():
+            return int(store.archie_difficulty(target, action_name)
+                       + int(getattr(target, "dc_offset", 0) or 0))
+
+        # 3) Обычные враги
+        if hasattr(target, "base_difficulty"):
+            mood = getattr(target, "mood", "neutral")
+            stat_key = ACTS_CONFIG[action_name]["check"]
+            mod_map = getattr(target, stat_key + "_difficulty_mod", {}) or {}
+            penalty = int(getattr(target, "noelle_frost_social_penalty", 0) or 0)
+            return int(target.base_difficulty + mod_map.get(mood, 0) - penalty)
+
+        return 0
+
 
 
 
@@ -789,15 +821,7 @@ label hero_acts:
         $ nego_selected_stat_value = 0
         $ nego_social_value = 0
 
-    if target and hasattr(target, 'base_difficulty') and isinstance(attackindex, str) and attackindex in ACTS_CONFIG:
-        $ mood = getattr(target, "mood", "neutral")
-        $ stat_key = ACTS_CONFIG[attackindex]["check"]
-        $ mod_map = getattr(target, stat_key + "_difficulty_mod", {})
-        $ nego_difficulty = int(target.base_difficulty + mod_map.get(mood, 0))
-        if getattr(target, "name", None) == "Арчи":
-            $ nego_difficulty = archie_difficulty(target, attackindex)
-    else:
-        $ nego_difficulty = 0
+    $ nego_difficulty = calculate_action_difficulty(target, attackindex) if target else 0
     
     # Получаем имя персонажа по индексу
     $ attacker_name = ["Крис", "Азриель", "Чара", "Фриск", "Иззи", "Кловер", "Седрик", "Арчи", "Сильвия", "Фабри", "Эмили", "Сьюзи", "Ральзей", "Ноэлль", "Санс", "Бердли"][current_attacker - 1]

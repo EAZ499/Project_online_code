@@ -2392,6 +2392,15 @@ init python:
                 "max_hp": self.max_hp,
                 "max_mp": self.max_mp,
             }
+            self.initial_bonuses = {
+                "bonus_atk": float(self.bonus_atk),
+                "bonus_magic": float(self.bonus_magic),
+                "bonus_def": float(self.bonus_def),
+                "bonus_dmgchance": float(self.bonus_dmgchance),
+                "bonus_critrate": float(self.bonus_critrate),
+                "bonus_crit": float(self.bonus_crit),
+                "bonus_tank": float(self.bonus_tank),
+            }
 
 
         def debuff(self, prefix, value, first_bonus=1):
@@ -2452,6 +2461,16 @@ init python:
                     "total_tank": self.total_tank,
                     "max_hp": self.max_hp,
                     "max_mp": self.max_mp,
+                }
+            if "initial_bonuses" not in self.__dict__:
+                self.initial_bonuses = {
+                    "bonus_atk": float(getattr(self, "bonus_atk", 0.0)),
+                    "bonus_magic": float(getattr(self, "bonus_magic", 0.0)),
+                    "bonus_def": float(getattr(self, "bonus_def", 0.0)),
+                    "bonus_dmgchance": float(getattr(self, "bonus_dmgchance", 0.0)),
+                    "bonus_critrate": float(getattr(self, "bonus_critrate", 0.0)),
+                    "bonus_crit": float(getattr(self, "bonus_crit", 0.0)),
+                    "bonus_tank": float(getattr(self, "bonus_tank", 0.0)),
                 }
 
             if "route" not in self.__dict__:
@@ -2724,6 +2743,14 @@ init python:
             self.base_crit = value
 
         @property
+        def bonus_crit(self):
+            return getattr(self, "bonus_crit2", 0.0)
+
+        @bonus_crit.setter
+        def bonus_crit(self, value):
+            self.bonus_crit2 = float(value)
+
+        @property
         def critrate(self):
             return max(self.base_critrate + self.bonus_critrate2 + self.critrate_debuff_var, 0)
 
@@ -2732,9 +2759,25 @@ init python:
             self.critrate2 = value
 
         @property
+        def bonus_critrate(self):
+            return getattr(self, "bonus_critrate2", 0.0)
+
+        @bonus_critrate.setter
+        def bonus_critrate(self, value):
+            self.bonus_critrate2 = float(value)
+
+        @property
         def dmgchance(self):
             frost_penalty = float(getattr(self, "noelle_frost_accuracy", 0.0) or 0.0)
             return max(self.base_dmgchance + self.bonus_dmgchance2 + self.accuracy_debuff_var - frost_penalty, 0)
+
+        @property
+        def bonus_dmgchance(self):
+            return getattr(self, "bonus_dmgchance2", 0.0)
+
+        @bonus_dmgchance.setter
+        def bonus_dmgchance(self, value):
+            self.bonus_dmgchance2 = float(value)
 
         @property
         def accuracy_debuff_var(self):
@@ -4170,23 +4213,9 @@ init python:
             karma_bonus = int(getattr(enemy, "sans_karma", 0) or 0) if self.name == "Санс" else 0
             hero_score = int(store.base_nego_perform) + store.nego_selected_stat_value + store.nego_social_value + karma_bonus
 
-            # 1) Прямые сложности действия на объекте врага (у лягушек)
-            _action_diffs = getattr(enemy, "action_difficulties", {}) or {}
-            _act_key = {"Убедить": "Убеждение", "Исполнить": "Исполнение"}.get(store.attackindex, store.attackindex)
-            if _act_key in _action_diffs:
-                store.nego_difficulty = int(_action_diffs[_act_key])
-            elif hasattr(enemy, "base_difficulty"):
-                mood = getattr(enemy, "mood", "neutral")
-                diff_mods = getattr(enemy, f"{stat_key}_difficulty_mod", {})
-                store.nego_difficulty = int(enemy.base_difficulty + diff_mods.get(mood, 0) - getattr(enemy, "noelle_frost_social_penalty", 0))
-            else:
-                store.nego_difficulty = int(getattr(self, "base_difficulty", 10))
-
+            store.nego_difficulty = calculate_action_difficulty(enemy, store.attackindex)
             store.nego_total_score = hero_score
             success = hero_score > store.nego_difficulty
-            if getattr(enemy, "name", None) == "Арчи":
-                store.nego_difficulty = store.archie_difficulty(enemy, store.attackindex) + int(getattr(enemy, "dc_offset", 0))
-                success = hero_score > store.nego_difficulty
 
             # Фрогис: «Исключительная упёртость» — превращает успех в провал
             if success and getattr(enemy, "name", None) == "Фрогис" and "frog_try_pride_override" in globals():

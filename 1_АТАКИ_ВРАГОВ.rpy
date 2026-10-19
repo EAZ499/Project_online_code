@@ -57,6 +57,27 @@ init python:
             return False
         return True
 
+    def frog_hover_attack(frog):
+        """Атака лягушки по наведению. Одна атака за раунд.
+
+        enemy_attack_and_show_results → enemy_can_take_turn требует
+        enemy.turn == 1. Поэтому перед вызовом явно ставим turn = 1,
+        а флаг `_frog_hover_attacked` защищает от повторных hovered
+        на ту же лягушку в этом раунде.
+        """
+        if frog is None:
+            return
+        if getattr(frog, "current_hp", 0) <= 0:
+            return
+        if getattr(frog, "dead", False):
+            return
+        if getattr(frog, "_frog_hover_attacked", False):
+            return
+
+        frog._frog_hover_attacked = True
+        frog.turn = 1
+        enemy_attack_and_show_results(frog)
+
     def enemy_turn_is_done(enemy_name):
         enemy = store.enemies.get(enemy_name) if hasattr(store, "enemies") and store.enemies else None
         return enemy is None or getattr(enemy, "dead", False) or getattr(enemy, "current_hp", 0) <= 0 or getattr(enemy, "turn", 0) == 1
@@ -86,11 +107,19 @@ init python:
         # 3. Рассчитываем и наносим урон (дебафы применяются внутри calculate_dmg_to_hero)
         damage = enemy.calculate_dmg_to_hero(target_hero)
 
-        # Пассивка Фрогетты «Больно не будет!»
-        if enemy.name == "Фрогетта" and damage > 0 and "frog_try_lethal_on_attack" in globals():
+        # ─── Пассивка Фрогетты «Больно не будет!» ───
+        # Срабатывает при ЛЮБОЙ атаке Фрогетты, даже при промахе (damage == 0).
+        # Шанс = critrate Фрогетты. Защита от «двойного убийства» уже
+        # встроена в саму frog_try_lethal_on_attack (проверяет current_hp <= 0).
+        if enemy.name == "Фрогетта" and "frog_try_lethal_on_attack" in globals():
             frog_try_lethal_on_attack(target_hero)
-        # Пассивка Фрогестера «Наточенные стрелы»
-        if enemy.name == "Фрогестер" and damage > 0 and "frog_frogster_bleed_on_hit" in globals():
+
+        # ─── Пассивка Фрогиса «Наточенные стрелы» ───
+        # +1 стак кровотечения при попадании. Условие срабатывания
+        # исправлено: раньше стояло "Фрогестер", хотя эффект принадлежит
+        # Фрогису (см. 1_враг_Лягушки.rpy — «НАТОЧЕННЫЕ СТРЕЛЫ» ФРОГИСА).
+        # damage > 0 оставлен специально: «каждое ПОПАДАНИЕ».
+        if enemy.name == "Фрогис" and damage > 0 and "frog_frogster_bleed_on_hit" in globals():
             frog_frogster_bleed_on_hit(target_hero)
 
         # 3.5. «Перестрелка в полдень» Кловера (ур.5): когда противник атакует
@@ -279,15 +308,23 @@ screen enemyattack:
     elif battlenumber == 20:  # Лягушки
         if hasattr(store, 'enemies') and store.enemies:
             $ _frog_names = ["Фроглин", "Фрогетта", "Фрогестер", "Фрогис"]
-            for _fname in _frog_names:
-                imagebutton:
-                    at textbuttontest
-                    idle "fightor.png"
-                    hover "magicor.png"
-                    action [
-                        SetVariable("enemy_ind_atk_ratio", 1.0),
-                        Function(enemy_attack_and_show_results, store.enemies.get(_fname))
-                    ]
+            vbox:
+                xalign 0.5
+                yalign 0.5
+                spacing 22
+                for _fname in _frog_names:
+                    $ _frog = store.enemies.get(_fname)
+                    if _frog is not None:
+                        textbutton _fname:
+                            text_size 40
+                            text_color "#ffffff"
+                            text_hover_color "#ffff00"
+                            text_outlines [(2, "#000000", 0, 0)]
+                            action NullAction()
+                            hovered [
+                                SetVariable("enemy_ind_atk_ratio", 1.0),
+                                Function(frog_hover_attack, _frog)
+                            ]
             # Таймеры завершения хода для каждого
             timer 10.5 / store.enemies["Фроглин"].speed  action [Function(setattr, store.enemies["Фроглин"],  "turn", 1)]
             timer 10.5 / store.enemies["Фрогетта"].speed action [Function(setattr, store.enemies["Фрогетта"], "turn", 1)]
@@ -495,6 +532,10 @@ label afterenemyattack:
             enemy = store.enemies.get(enemy_name) if hasattr(store, 'enemies') and store.enemies else None
             if enemy is not None:
                 enemy.turn = 0
+                # Сброс флага hovered-атаки: в следующем раунде лягушка
+                # снова может атаковать по наведению.
+                if hasattr(enemy, "_frog_hover_attacked"):
+                    enemy._frog_hover_attacked = False
     
     hide screen enemybgappears
 

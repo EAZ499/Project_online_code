@@ -250,9 +250,9 @@ init python:
 
         "Фрогис": {
             "permanent": [
-                ("Не особо-то и хотелось", "Из-за нежелания драться Фрогестер получает в конце каждого хода 15% от своего максимального значения пощады."),
-                ("Милое пузеко",           "Оно такое желейное, что не хочется по нему бить. −10% от атаки атакующему персонажу после нанесения урона по Фрогестеру."),
-                ("Наточенные стрелы",      "Каждое попадание снарядом Фрогестера наносит 1 стак кровотечения по цели."),
+                ("Не особо-то и хотелось", "Из-за нежелания драться Фрогис получает в конце каждого хода 15% от своего максимального значения пощады."),
+                ("Милое пузеко",           "Оно такое желейное, что не хочется по нему бить. −10% от атаки атакующему персонажу после нанесения урона по Фрогис."),
+                ("Наточенные стрелы",      "Каждое попадание снарядом Фрогис наносит 1 стак кровотечения по цели."),
             ],
             "mood": {
                 "neutral":    [("—", "Нет особых эффектов настроения.")],
@@ -266,10 +266,10 @@ init python:
             },
         },
 
-         "Фрогестер": {
+        "Фрогестер": {
             "permanent": [
-                ("Не задобришь!",            "Каждый ход Фрогис откатывает прогресс пощады на 15%."),
-                ("Видите? Они злодеи!",      "Каждый раз, когда Фрогис получает урон, он получает −2 дебафф атаки и +10% к крит-урону. Атакующий получает +5% к атаке и +5% к крит-урону."),
+                ("Не задобришь!",            "Каждый ход Фрогестер откатывает прогресс пощады на 15%."),
+                ("Видите? Они злодеи!",      "Каждый раз, когда Фрогестер получает урон, он получает −2 дебафф атаки и +10% к крит-урону. Атакующий получает +5% к атаке и +5% к крит-урону."),
                 ("Исключительная упёртость", "Фрогис имеет шанс = его крит-шанс превратить удачную проверку социальной характеристики для действия с положительным эффектом в провальную."),
             ],
             "mood": {
@@ -457,43 +457,39 @@ init python:
             return []
 
         result = []
-        initial_stats = getattr(enemy, "initial_stats", {}) or {}
-        table = [
-            # (эффект, иконка_дебаффа, иконка_баффа, характеристика)
-            ("bloodshed_debuff", "bloodshed.png",          "healing.png",          None),
-            ("prone_debuff",     "prone.png",              "antiprone.png",        None),
-            ("atk_debuff",       "atk_red_icon.png",       "atk_green_icon.png",   "atk"),
-            ("def_debuff",       "def_red_icon.png",       "def_green_icon.png",   "defense"),
-            ("magic_debuff",     "mag_red_icon.png",       "mag_green_icon.png",   "magic"),
-            ("accuracy_debuff",  "dmgchance_red_icon.png", "dmgchance_green_icon.png", "dmgchance"),
-            ("critrate_debuff",  "critrate_red_icon.png",  "critrate_green_icon.png",  "critrate"),
-            ("critdmg_debuff",   "critdmg_red_icon.png",   "critdmg_green_icon.png",   "crit"),
-            ("tank_debuff",      "tank_red_icon.png",      "tank_green_icon.png",      "total_tank"),
+
+        # Статусные эффекты (без числовых бонусов)
+        if getattr(enemy, "bloodshed_debuff", 0) > 0:
+            result.append(("bloodshed.png", False, None))
+        if getattr(enemy, "prone_debuff", 0) > 0:
+            result.append(("prone.png", False, None))
+
+        # Изначальные значения бонусов (по умолчанию 0.0)
+        init_bonuses = getattr(enemy, "initial_bonuses", {}) or {}
+
+        # Таблица бонусов: (ключ, текущее_значение, green_icon, red_icon, в_процентах)
+        bonus_table = [
+            ("bonus_atk",       getattr(enemy, "bonus_atk", 0.0),       "atk_green_icon.png",       "atk_red_icon.png",       True),
+            ("bonus_magic",     getattr(enemy, "bonus_magic", 0.0),     "mag_green_icon.png",       "mag_red_icon.png",       True),
+            ("bonus_def",       getattr(enemy, "bonus_def", 0.0),       "def_green_icon.png",       "def_red_icon.png",       True),
+            ("bonus_dmgchance", getattr(enemy, "bonus_dmgchance", 0.0), "dmgchance_green_icon.png", "dmgchance_red_icon.png", True),
+            ("bonus_critrate",  getattr(enemy, "bonus_critrate", 0.0),  "critrate_green_icon.png",  "critrate_red_icon.png",  True),
+            ("bonus_crit",      getattr(enemy, "bonus_crit", 0.0),      "critdmg_green_icon.png",   "critdmg_red_icon.png",   True),
+            ("bonus_tank",      getattr(enemy, "bonus_tank", 0.0),      "tank_green_icon.png",      "tank_red_icon.png",      False),
         ]
 
-        for attr, pos_icon, neg_icon, stat_key in table:
-            val = getattr(enemy, attr, 0)
-            stat_changed = False
-            is_buff = False
-            icon = None
+        for key, curr_val, green_icon, red_icon, is_pct in bonus_table:
+            base_val = init_bonuses.get(key, 0.0)
+            diff = curr_val - base_val
 
-            # 1. Сначала проверяем фактическое изменение характеристики.
-            if stat_key is not None and stat_key in initial_stats:
-                current = getattr(enemy, stat_key, 0)
-                initial = initial_stats[stat_key]
-                if current != initial:
-                    stat_changed = True
-                    is_buff = current > initial
-                    icon = neg_icon if is_buff else pos_icon
-
-            # 2. Если характеристика ещё не пересчиталась, но счётчик дебаффа
-            #    уже ненулевой — показываем иконку по знаку счётчика.
-            if not stat_changed and val != 0:
-                is_buff = val < 0          # отрицательный счётчик = бафф
-                icon = pos_icon if val > 0 else neg_icon
-
-            if icon is not None:
-                result.append((icon, is_buff))
+            if abs(diff) >= 0.001:
+                is_buff = diff > 0
+                icon = green_icon if is_buff else red_icon
+                if is_pct:
+                    text = "%+d%%" % int(round(diff * 100))
+                else:
+                    text = "%+d" % int(round(diff))
+                result.append((icon, is_buff, text))
 
         return result
 
@@ -508,13 +504,7 @@ init python:
         if action_name not in ACTS_CONFIG:
             return None
 
-        cfg = ACTS_CONFIG[action_name]
-        stat_key = cfg["check"]
         mood = getattr(enemy, "mood", "neutral")
-
-        mods = getattr(enemy, f"{stat_key}_difficulty_mod", {})
-        diff = int(enemy.base_difficulty + mods.get(mood, 0))
-
         if examine_level == 3:
             # Только для уже «изученных» действий текущего настроения
             used     = enemy.mood_action_used.get(mood, {}).get(action_name, False)
@@ -525,6 +515,7 @@ init python:
             if not (used or revealed or izzy):
                 return None
 
+        diff = calculate_action_difficulty(enemy, action_name)
         return f"Сложность: {diff}"
 
     # ============================================================
@@ -727,14 +718,21 @@ screen enemydesc():
 
                         # --- Активные эффекты (видно на L5) ---
                         if d["effects"]:
-                            grid 5 2:
+                            grid 5 3:
                                 xalign 0.5
-                                spacing 3
-                                for icon, is_buff in d["effects"][:10]:
-                                    if is_buff:
-                                        add icon size (32, 32) at damage_gradient_green
-                                    else:
-                                        add icon size (32, 32) at damage_gradient
+                                spacing 4
+                                for icon, is_buff, bonus_text in d["effects"][:15]:
+                                    hbox:
+                                        spacing -10
+                                        yalign 0.5
+                                        if is_buff:
+                                            add icon size (32, 32) yalign 0.5 at damage_gradient_green
+                                        else:
+                                            add icon size (32, 32) yalign 0.5 at damage_gradient
+
+                                        if bonus_text:
+                                            text "[bonus_text]" size 20 color ("#00ff04" if is_buff else "#ff4444") yalign 0.5 outlines [(2, "#000000", 0, 0)] yoffset 10
+
 
                     # ========================================================
                     # ПРАВАЯ КОЛОНКА — статы и пассивки
@@ -750,17 +748,17 @@ screen enemydesc():
                         # --- Статы (3 колонки × 2 строки) ---
                         grid 3 3:
                             spacing 2
-                            use enemydesc_stat_cell("Атака",      d["stats"].get("atk"))
-                            use enemydesc_stat_cell("Крит шанс",  d["stats"].get("critrate"), "%")                        
-                            use enemydesc_stat_cell("Точность",   d["stats"].get("accuracy"), "%")
+                            use enemydesc_stat_cell("Атака",      d["stats"].get("atk"),      debuff_val=getattr(e, "atk_debuff", 0),      debuff_name_pos="Истощение", debuff_name_neg="Бодрость")
+                            use enemydesc_stat_cell("Крит шанс",  d["stats"].get("critrate"), "%", debuff_val=getattr(e, "critrate_debuff", 0), debuff_name_pos="Сглаз",     debuff_name_neg="Удача")                        
+                            use enemydesc_stat_cell("Точность",   d["stats"].get("accuracy"), "%", debuff_val=getattr(e, "accuracy_debuff", 0), debuff_name_pos="Страх",     debuff_name_neg="Концентрация")
 
-                            use enemydesc_stat_cell("Защита",     d["stats"].get("def"))
-                            use enemydesc_stat_cell("Крит урон",  d["stats"].get("critdmg"), "%")
-                            use enemydesc_stat_cell("Магия",      d["stats"].get("magic"), "%")
+                            use enemydesc_stat_cell("Защита",     d["stats"].get("def"),      debuff_val=getattr(e, "def_debuff", 0),      debuff_name_pos="Печаль",    debuff_name_neg="Вдохновение")
+                            use enemydesc_stat_cell("Крит урон",  d["stats"].get("critdmg"),  "%", debuff_val=getattr(e, "critdmg_debuff", 0),  debuff_name_pos="Безразличие", debuff_name_neg="Гнев")
+                            use enemydesc_stat_cell("Магия",      d["stats"].get("magic"),    "%", debuff_val=getattr(e, "magic_debuff", 0),    debuff_name_pos="Помутнение", debuff_name_neg="Просвещение")
 
-                            use enemydesc_stat_cell("Скорость",   d["stats"].get("speed"), "%")
-                            null width 230 height 46
-                            null width 230 height 46
+                            use enemydesc_stat_cell("Скорость",   d["stats"].get("speed"),    "%", debuff_val=getattr(e, "tank_debuff", 0),     debuff_name_pos="Уязвимость", debuff_name_neg="Скрытность")
+                            null width 200 height 52
+                            null width 200 height 52
 
                         # --- Постоянные пассивки ---
                         frame:
@@ -813,18 +811,30 @@ screen enemydesc():
                 text "turn=[e.turn]"                size 14 color "#ffffff" yalign 0.5
 
 
-screen enemydesc_stat_cell(label_text, value, suffix=""):
+screen enemydesc_stat_cell(label_text, value, suffix="", debuff_val=0, debuff_name_pos="", debuff_name_neg=""):
     frame:
-        xsize 230 ysize 46
+        xsize 200 ysize 52
         background "#000000"
-        padding (6, 4)
+        padding (6, 2)
 
-        hbox:
-            spacing 6
+        vbox:
+            spacing 1
             yalign 0.5
 
-            text "[label_text]:" size 20 color "#ffffff"
-            if value is None:
-                text "???" size 20 color "#666666"
-            else:
-                text "[value][suffix]" size 20 color "#ffffff"
+            hbox:
+                spacing 6
+                yalign 0.5
+
+                text "[label_text]:" size 20 color "#ffffff"
+                if value is None:
+                    text "???" size 20 color "#666666"
+                else:
+                    text "[value][suffix]" size 20 color "#ffffff"
+
+            if debuff_val != 0 and value is not None:
+                if debuff_val > 0:
+                    $ debuff_txt = f"{debuff_name_pos}(х{debuff_val})" if debuff_name_pos else f"(+{debuff_val})"
+                    text "[debuff_txt]" size 14 color "#8b0000"
+                else:
+                    $ debuff_txt = f"{debuff_name_neg}(х{-debuff_val})" if debuff_name_neg else f"({debuff_val})"
+                    text "[debuff_txt]" size 14 color "#006400"
