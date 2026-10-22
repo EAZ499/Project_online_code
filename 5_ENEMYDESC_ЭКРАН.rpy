@@ -9,6 +9,34 @@ default enemy_desc_fallback_traits = ["closed", "agreeable"]
 default enemy_desc_target = None
 
 init python:
+    def enemydesc_bonus_text(value, percent=False):
+        """Возвращает строку для бонуса или '' если отображаемое значение == 0."""
+        try:
+            value = float(value)
+        except Exception:
+            return ""
+
+        if percent:
+            n = int(round(value * 100))
+            if n == 0:
+                return ""
+            return "{:+d}%".format(n)
+        else:
+            n = int(round(value))
+            if n == 0:
+                return ""
+            return "{:+d}".format(n)
+
+    def enemydesc_bonus_is_nonzero(bonus_text):
+        """True, если в строке бонуса НЕ ноль. Иначе — прячем текст, оставляя только иконку."""
+        if not bonus_text:
+            return False
+        s = str(bonus_text).strip().replace("%", "")
+        try:
+            return float(s) != 0.0
+        except Exception:
+            return True
+
     def enemy_desc_format_number(value):
         try:
             number = float(value)
@@ -479,14 +507,14 @@ init python:
 
         result = []
 
-        # Статусные эффекты
+        # Статусные эффекты — уже 3-кортежи
         _bleed = getattr(enemy, "bloodshed_debuff", 0)
         if _bleed > 0:
             result.append(("bloodshed.png", False, "x%d" % int(round(_bleed))))
         if getattr(enemy, "prone_debuff", 0) > 0:
             result.append(("prone.png", False, None))
 
-        # Изначальные значения бонусов (по умолчанию 0.0)
+        # Инициальные значения бонусов (по умолчанию 0.0)
         init_bonuses = getattr(enemy, "initial_bonuses", {}) or {}
 
         # Таблица бонусов: (ключ, текущее_значение, green_icon, red_icon, в_процентах)
@@ -504,14 +532,15 @@ init python:
             base_val = init_bonuses.get(key, 0.0)
             diff = curr_val - base_val
 
-            if abs(diff) >= 0.001:
-                is_buff = diff > 0
-                icon = green_icon if is_buff else red_icon
-                if is_pct:
-                    text = "%+d%%" % int(round(diff * 100))
-                else:
-                    text = "%+d" % int(round(diff))
-                result.append((icon, is_buff, text))
+            if abs(diff) < 0.001:
+                continue
+
+            is_buff = diff > 0
+            icon = green_icon if is_buff else red_icon
+            bonus_text = enemydesc_bonus_text(diff, is_pct)  # "" при нуле, иначе "+20%" / "+2"
+
+            if bonus_text:
+                result.append((icon, is_buff, bonus_text))
 
         return result
 
@@ -760,7 +789,7 @@ screen enemydesc():
                                         else:
                                             add icon size (32, 32) yalign 0.5 at damage_gradient
 
-                                        if bonus_text:
+                                        if enemydesc_bonus_is_nonzero(bonus_text):
                                             text "[bonus_text]" size 20 color ("#00ff04" if is_buff else "#ff4444") yalign 0.5 outlines [(2, "#000000", 0, 0)] yoffset 10
 
 
