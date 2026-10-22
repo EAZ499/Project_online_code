@@ -144,6 +144,11 @@ init python:
         action_name = {"Убедить": "Убеждение", "Исполнить": "Исполнение"}.get(action_name, action_name)
         return archie_mood_tree.get(getattr(target, "mood", "happy"), {}).get(action_name, {}).get("difficulty", 0)
 
+    # ------------------------------------------------------------------
+    # Манекен (Dummy): дерево настроений и механика переговоров перенесены
+    # в 1_ВРАГ_МАНЕКЕН.rpy
+    # ------------------------------------------------------------------
+
     def trevor_get_effect(enemy, action_name, attacker_name=None):
         if enemy is None or getattr(enemy, "name", None) != "Тревор":
             return 0
@@ -410,6 +415,22 @@ init python:
                 enemy.route, enemy.route_stage = "taunt", 2
                 set_enemy_mood(enemy, "angry")
                 renpy.notify("Арчи: рут «Дразнилки», настроение «Злой».")
+            return
+
+        if getattr(enemy, "nameeng", None) == "dummy" \
+                or getattr(enemy, "name", None) == "Манекен":
+            peace = int(getattr(enemy, "dummy_peace_actions", 0))
+            taunt = int(getattr(enemy, "dummy_taunt_actions", 0))
+            spare = int(getattr(enemy, "spare_progress", 0))
+
+            if enemy.route is None and spare >= DUMMY_PEACE_THRESHOLD and peace > taunt:
+                enemy.route, enemy.route_stage = "peace", 2
+                set_enemy_mood(enemy, "happy")
+                renpy.notify("Манекен: рут «Мирный», настроение «Весёлое».")
+            elif enemy.route is None and spare >= DUMMY_TAUNT_THRESHOLD and taunt > peace:
+                enemy.route, enemy.route_stage = "taunt", 2
+                set_enemy_mood(enemy, "angry")
+                renpy.notify("Манекен: рут «Дразнилки», настроение «Злое».")
             return
 
         config = enemy_route_config.get(getattr(enemy, "name", None))

@@ -1,4 +1,4 @@
-
+﻿
 default raw_damage_for_vis = 0
 # Переменные состояния игры
 default current_char = "Крис"
@@ -9224,27 +9224,37 @@ init python:
                 bloodshed_debuffchance=15,
                 xp=45
             ),
-            "dummy": Enemy( # Тестовый минимальный противник
+            "dummy": Enemy(
                 name="Манекен",
                 nameeng="dummy",
-                base_def=1,
-                max_hp=100,
+                base_def=5,
                 base_magic_armor=0,
-                attack=2,
+                max_hp=1000,
+                attack=0,
+                critrate=0,
+                critdmg=0.0,
+                accuracy=0.0,
+                base_magic=0,
+                speed=1.0,
+                spare_max=100,
                 atk_debuffchance=0,
                 def_debuffchance=0,
+                critrate_debuffchance=0,
+                magic_debuffchance=0,
                 bloodshed_debuffchance=0,
                 prone_chance=0,
-                xp=45,
-                ask_way = 1,
-                persuade_way = 1,
-                tell_way = 1,
-                support_way = 1,
-                play_way = 1,
-                perform_way = 1,
-                humiliate_way = 1,
-                tease_way = 1,
-                scare_way = 1
+                accuracy_debuffchance=0,
+                critdmg_debuffchance=0,
+                xp=0,
+                ask_way=1,
+                persuade_way=1,
+                tell_way=1,
+                support_way=1,
+                play_way=1,
+                perform_way=1,
+                humiliate_way=1,
+                tease_way=1,
+                scare_way=1
             ),
             "dummy2": Enemy( # Манекен 2
                 name="Манекен 2",

@@ -263,6 +263,10 @@ label start2:
 
     $ store.enemies["dummy"].bloodshed_debuff = 4
     $ store.enemies["dummy"].prone_debuff = 1
+    $ store.enemies["dummy"].atk_debuff = -4
+    $ store.enemies["dummy"].def_debuff = -2
+    $ store.enemies["dummy"].critdmg_debuff = -4
+    $ store.enemies["dummy"].shield = 2
     $ store.enemies["dummy"].bonus_atk2 += 0.2
     $ store.enemies["dummy"].bonus_magic2 += 0.2
     $ store.enemies["dummy"].bonus_def2 += 0.2
@@ -518,20 +522,24 @@ label start2:
 
     if project == "fight": 
         label fightstarts:
+            # показать
+            #"amgus"
+            # убрать
 
-        #label Underrunefight:
-        "щас будет атака"
-        #$ persistent.hp = 20
-        # show screen mouse_restricted_area  # Показываем экран с ограниченной областью
-        $ default_mouse = 'damaged'
-        $ renpy.pause(0.7, hard=True)
-        $ default_mouse = "default2"
-        #$ renpy.pause(2, hard=True)
-        #$ MouseMove(640, 360, duration=0.3)
-        #$ renpy.pause(2, hard=True)
-        #$ default_mouse = "Null"
+            
+            #label Underrunefight:
+            "щас будет атака"
+            #$ persistent.hp = 20
+            # show screen mouse_restricted_area  # Показываем экран с ограниченной областью
+            $ default_mouse = 'damaged'
+            $ renpy.pause(0.7, hard=True)
+            $ default_mouse = "default2"
+            #$ renpy.pause(2, hard=True)
+            #$ MouseMove(640, 360, duration=0.3)
+            #$ renpy.pause(2, hard=True)
+            #$ default_mouse = "Null"
 
-        call screen fightbegin
+            call screen fightbegin
 
 
 

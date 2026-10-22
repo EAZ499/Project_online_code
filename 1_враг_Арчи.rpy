@@ -16,6 +16,9 @@ init python:
         archie._archie_damage_guard = False
 
     def archie_enemy():
+        # Пассивки Арчи работают только в его бою.
+        if getattr(store, "battlenumber", 0) != 1:
+            return None
         archie = (getattr(store, "enemies", {}) or {}).get("Арчи")
         if archie is not None and not hasattr(archie, "reaction_mode"):
             init_archie_battle_state(archie)

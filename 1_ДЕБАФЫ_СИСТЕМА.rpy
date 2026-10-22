@@ -290,7 +290,9 @@ init  python:
                 # ============================================================
                 # 1. КРОВОТЕЧЕНИЕ: -5% от макс хп за каждый уровень дебафа
                 # ============================================================
-                if enemy.bloodshed_debuff > 0:
+                if "dummy_prevent_bleeding" in globals() and dummy_prevent_bleeding(enemy):
+                    pass
+                elif enemy.bloodshed_debuff > 0:
                     bleed_damage = int(enemy.max_hp * 0.05 * abs(enemy.bloodshed_debuff))
                     # Приближаем к нулю
                     old_hp = enemy.current_hp
@@ -768,6 +770,10 @@ init python:
         
         store.multiple_attacks_results[target_name].append(attack_result)
         store.current_round_attacks.append(attack_result)
+
+        # «Рвущиеся швы»: крит по манекену снижает его бонусную защиту
+        if is_crit and "dummy_on_crit" in globals():
+            dummy_on_crit(target_name)
 
         # «Следы на мече»: если этим ударом Крис добил врага — вечный бонус
         # (+0.25% крит.урона и +0.15% атаки за каждого добитого).

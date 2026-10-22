@@ -12,6 +12,9 @@ init python:
         return {"Убедить": "Убеждение", "Исполнить": "Исполнение"}.get(action_name, action_name)
 
     def frog_enemy_by_name(enemy_name):
+        # Пассивки лягушек работают только в их собственном бою.
+        if getattr(store, "battlenumber", 0) != 20:
+            return None
         enemies = getattr(store, "enemies", {}) or {}
         enemy = enemies.get(enemy_name)
         if enemy is not None and getattr(enemy, "current_hp", 0) > 0:
@@ -440,11 +443,15 @@ init python:
         enemies = getattr(store, "enemies", {}) or {}
         last_val = 0
         targets = []
-        for fname in FROG_NAMES:
-            if fname in enemies:
-                targets.append(enemies[fname])
+        if "get_active_enemies" in globals():
+            try:
+                for name in get_active_enemies():
+                    if name in enemies:
+                        targets.append(enemies[name])
+            except Exception:
+                pass
         if not targets:
-            targets = [e for e in enemies.values() if getattr(e, "current_hp", 0) > 0]
+            targets = list(enemies.values())
         t = getattr(store, "target", None)
         if t is not None and t not in targets:
             targets.append(t)
@@ -462,16 +469,23 @@ init python:
 
     def get_frogs_evaluate_display():
         enemies = getattr(store, "enemies", {}) or {}
-        for fname in FROG_NAMES:
-            if fname in enemies and getattr(enemies[fname], "current_hp", 0) > 0:
-                return str(getattr(enemies[fname], "evaluate_success_count", 0))
-        for e in enemies.values():
-            if getattr(e, "current_hp", 0) > 0:
-                return str(getattr(e, "evaluate_success_count", 0))
+        targets = []
+        if "get_active_enemies" in globals():
+            try:
+                for name in get_active_enemies():
+                    if name in enemies:
+                        targets.append(enemies[name])
+            except Exception:
+                pass
+        if not targets:
+            targets = list(enemies.values())
+        if targets:
+            vals = [str(getattr(e, "evaluate_success_count", 0)) for e in targets]
+            return vals[0] if len(set(vals)) == 1 else "/".join(vals)
         t = getattr(store, "target", None)
         if t is not None:
             return str(getattr(t, "evaluate_success_count", 0))
-        return "5"
+        return "0"
 
 
 # Лейбл для вызова из боя: call mark_frogs_checked_from_start

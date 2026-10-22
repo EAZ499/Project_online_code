@@ -40,11 +40,12 @@ init python:
             4: ["Психолог"],
             5: ["Спамтон"],
             10: ["Арчи", "Тревор", "ДжевилV1", "Психолог"],
-            11: ["dummy"],
-            13: ["dummy2"],
+            11: ["dummy", "Тревор", "ДжевилV1"],
+            12: ["dummy"],
+            13: ["dummy2", "Тревор"],
             20: ["Фроглин", "Фрогетта", "Фрогестер", "Фрогис"],
         }
-        return mapping.get(store.battlenumber, [])
+        return mapping.get(store.battlenumber, ["dummy"])
 
     def _active_enemy_objects():
         """Список активных enemy-объектов."""
@@ -68,11 +69,14 @@ init python:
         return None
 
     def update_enemy_resolution_flags():
-        """Обновляет флаги spared/dead у врагов по их текущему состоянию."""
+        """Обновляет флаг dead у врагов по их текущему состоянию.
+
+        Флаг spared НЕ выставляется автоматически по spare_progress:
+        достижение максимума делает врага «готовым к пощаде», но саму пощаду
+        проводит игрок действием «Пощадить» (perform_spare).
+        """
         for enemy in _active_enemy_objects():
-            # Пощажённый враг: либо уже есть флаг, либо набран spare_progress.
-            if getattr(enemy, 'spared', False) or getattr(enemy, 'spare_progress', 0) >= getattr(enemy, 'spare_max', 100):
-                enemy.spared = True
+            enemy.dead = enemy.current_hp <= 0
 
             # Мёртвый враг определяется по HP.
             enemy.dead = enemy.current_hp <= 0

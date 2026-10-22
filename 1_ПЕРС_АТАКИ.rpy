@@ -2332,6 +2332,10 @@ init  python:
         """
         if enemy is None:
             return 0
+
+        if "dummy_prevent_bleeding" in globals() and dummy_prevent_bleeding(enemy):
+            return 0
+
         enemy.bloodshed_debuff = getattr(enemy, "bloodshed_debuff", 0) + int(duration)
         return enemy.bloodshed_debuff
 

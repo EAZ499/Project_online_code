@@ -97,12 +97,16 @@ init  python:
             return ["Арчи", "Тревор", "ДжевилV1", "Психолог"]
         elif battlenumber == 11:
             return ["dummy", "Тревор", "ДжевилV1"]
+        elif battlenumber == 12:
+            # Отдельный бой: только Манекен
+            return ["dummy"]
         elif battlenumber == 13:
             return ["dummy2", "Тревор"]
-        elif battlenumber == 20:  # Лягушки
+        elif battlenumber == 20:
             return ["Фроглин", "Фрогетта", "Фрогестер", "Фрогис"]
         else:
-            return ["нет"]
+            # По умолчанию (неизвестный battlenumber) — только Манекен.
+            return ["dummy"]
     
     def check_any_regen():
         """

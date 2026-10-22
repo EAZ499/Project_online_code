@@ -284,6 +284,27 @@ init python:
             },
         },
 
+        "Манекен": {
+            "permanent": [
+                ("Это просто манекен",       "Скучающий кусок дерева и старой ткани, набитый соломой. Атак у него нет — но от скуки каждый герой в конце хода может получить Усталость ×3 и Безразличие ×3 с шансом 20%."),
+                ("Бескровный, безмагии",     "Ни крови, ни магии — только дерево, ткань и нитки. Манекен не может получить кровотечение."),
+                ("Рвущиеся швы",             "Старые швы не выдерживают натиска. Каждый критический удар по манекену снижает его бонусную защиту на 10%."),
+            ],
+            "mood": {
+                "neutral": [
+                    ("Полностью поддатливый", "Проверки социальных характеристик при действиях против манекена имеют очень низкую сложность."),
+                    ("Особо не пофармишь", "Не даёт денег и опыта при победе над ним. А ты надеялся за него"),
+                ],
+                "sad":        [("—", "Нет особых эффектов настроения.")],
+                "happy":      [("—", "Нет особых эффектов настроения.")],
+                "angry":      [("—", "Нет особых эффектов настроения.")],
+                "feared":     [("—", "Нет особых эффектов настроения.")],
+                "confused":   [("—", "Нет особых эффектов настроения.")],
+                "thoughtful": [("—", "Нет особых эффектов настроения.")],
+                "tired":      [("—", "Нет особых эффектов настроения.")],
+            },
+        },
+
         # Дженерик: используются, если у врага нет своих пассивок
         "_default": {
             "permanent": [
@@ -458,9 +479,10 @@ init python:
 
         result = []
 
-        # Статусные эффекты (без числовых бонусов)
-        if getattr(enemy, "bloodshed_debuff", 0) > 0:
-            result.append(("bloodshed.png", False, None))
+        # Статусные эффекты
+        _bleed = getattr(enemy, "bloodshed_debuff", 0)
+        if _bleed > 0:
+            result.append(("bloodshed.png", False, "x%d" % int(round(_bleed))))
         if getattr(enemy, "prone_debuff", 0) > 0:
             result.append(("prone.png", False, None))
 
@@ -633,11 +655,19 @@ screen enemydesc():
                                     color "#ffffff"
 
                         # --- Портрет ---
+                        $ _is_dummy = (
+                            e is not None
+                            and getattr(e, "name", None) == "Манекен"
+                            and getattr(e, "nameeng", None) == "dummy"
+                        )
                         frame:
                             xfill 270
                             ysize 400
-                            background "#00cfd6"
                             padding (0, 0)
+                            if _is_dummy:
+                                add "dummyportrait.png" xysize (300, 400)
+                            else:
+                                background "#00cfd6"
                             # add "[d['nameeng']]fightsprite" xalign 0.5 yalign 0.5
 
                         # --- Щиты врага (жёлтые солиды) ---
@@ -760,61 +790,51 @@ screen enemydesc():
                             null width 200 height 52
                             null width 200 height 52
 
-                        # --- Постоянные пассивки ---
+                        # --- Пассивки (постоянные и от настроения в едином vbox) ---
                         frame:
                             xfill True
-                            #ysize 170
-                            background "#000000"
+                            xsize 650
+                            ysize 508
+                            background None #"#000000"
                             padding (10, 8)
                             vbox:
                                 spacing 6
                                 for pname, pdesc in d["passives_perm"]:
                                     vbox:
-                                        ysize 60
                                         spacing 2
-                                        text "• [pname]" size 25 color "#ffcc66"
-                                        text "    [pdesc]" size 20 color "#cccccc"
-
-                        # --- Пассивки от настроения ---
-                        frame:
-                            #xfill True
-                            xsize 500
-                            ysize 170
-                            background "#000000"
-                            padding (10, 8)
-                            vbox:
-                                spacing 6
+                                        text "• [pname]" size 25 color "#ffffff"
+                                        text "    [pdesc]" size 20 color "#cccccc" layout "greedy"
                                 for pname, pdesc in d["passives_mood"]:
                                     vbox:
                                         spacing 2
-                                        text "• [pname]" size 20 color "#66ccff"
-                                        text "    [pdesc]" size 16 color "#cccccc"
+                                        text "• [pname]" size 25 color "#fffb00"
+                                        text "    [pdesc]" size 20 color "#cccccc" layout "greedy"
 
         # ============================================================
         # ДЕБАГ-ПАНЕЛЬ (отдельно от основного фрейма, снизу)
         # ============================================================
-        frame:
-            xalign 0.5
-            ypos 660
-            xysize (900, 50)
-            background "#000000DD"
-            padding (8, 6)
+        #frame:
+        #    xalign 0.5
+        #    ypos 660
+        #    xysize (900, 50)
+        #    background "#000000DD"
+        #    padding (8, 6)
 
-            hbox:
-                spacing 20
-                text "DEBUG: [d['nameeng']]"      size 16 color "#ff00ff" yalign 0.5
-                text "mood=[e.mood]"                size 14 color "#ffffff" yalign 0.5
-                text "examine=[d['level']]"         size 14 color "#ffff00" yalign 0.5
-                text "hp=[e.current_hp]/[e.max_hp]" size 14 color "#ffffff" yalign 0.5
-                text "spare=[e.spare_progress]/[e.spare_max]" size 14 color "#ffff00" yalign 0.5
-                text "shield=[e.shield]"            size 14 color "#ffffff" yalign 0.5
-                text "turn=[e.turn]"                size 14 color "#ffffff" yalign 0.5
+        #    hbox:
+        #        spacing 20
+        #        text "DEBUG: [d['nameeng']]"      size 16 color "#ff00ff" yalign 0.5
+        #        text "mood=[e.mood]"                size 14 color "#ffffff" yalign 0.5
+        #        text "examine=[d['level']]"         size 14 color "#ffff00" yalign 0.5
+        #        text "hp=[e.current_hp]/[e.max_hp]" size 14 color "#ffffff" yalign 0.5
+        #        text "spare=[e.spare_progress]/[e.spare_max]" size 14 color "#ffff00" yalign 0.5
+        #        text "shield=[e.shield]"            size 14 color "#ffffff" yalign 0.5
+        #        text "turn=[e.turn]"                size 14 color "#ffffff" yalign 0.5
 
 
 screen enemydesc_stat_cell(label_text, value, suffix="", debuff_val=0, debuff_name_pos="", debuff_name_neg=""):
     frame:
-        xsize 200 ysize 52
-        background "#000000"
+        background None
+        xsize 200 ysize 30
         padding (6, 2)
 
         vbox:

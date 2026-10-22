@@ -48,10 +48,44 @@ screen Move_mouse:
 
 
 
+
+screen debug_select_battlenumber():
+    modal True
+    zorder 300
+
+    frame:
+        xalign 0.5
+        yalign 0.5
+        background "#1a1a24ee"
+        padding (25, 25)
+
+        vbox:
+            spacing 15
+            xalign 0.5
+
+            text "ВЫБОР БОЯ (battlenumber)" size 28 color "#ffffff" xalign 0.5
+
+            grid 5 5:
+                spacing 10
+                xalign 0.5
+
+                # 1..25
+                for num in range(1, 26):
+                    textbutton str(num):
+                        xsize 70
+                        ysize 50
+                        text_size 22
+                        text_xalign 0.5
+                        text_yalign 0.5
+                        action [SetVariable("battlenumber", num), Hide("debug_select_battlenumber")]
+
 screen fightbegin:
     #timer 0.5 action MouseMove(640, 360, duration=0.3)
     timer 0.8 action Jump("fightbegin12")
 label fightbegin12:
+    show screen debug_select_battlenumber
+    "амогус"
+    hide screen debug_select_battlenumber
     hide screen game_screen
 
     # Сбрасываем выбор атакующего/целей/действия в начале боя.
@@ -329,6 +363,8 @@ label first_turn_dialogue:
 
     if battlenumber == 11: 
         "Готовься к битве!"
+    elif battlenumber == 12:
+        "Манекен вышел на бой!"
     elif battlenumber == 13:
         "Манекен 2 вышел на бой!"
     $ default_mouse = "default2"

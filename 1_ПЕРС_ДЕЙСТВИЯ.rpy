@@ -82,6 +82,10 @@ init python:
             return int(store.archie_difficulty(target, action_name)
                        + int(getattr(target, "dc_offset", 0) or 0))
 
+        # Манекен (Dummy) — отдельное дерево/сложности
+        if (getattr(target, "name", None) == "Манекен" or getattr(target, "nameeng", None) == "dummy") and hasattr(store, "dummy_difficulty"):
+            return int(store.dummy_difficulty(target, action_name))
+
         # 3) Обычные враги
         if hasattr(target, "base_difficulty"):
             mood = getattr(target, "mood", "neutral")
@@ -993,6 +997,10 @@ label act_dispatch(action_name):
             $ apply_act_to_enemy(target, action_name, try_to_nego_result)
             $ frog_apply_act(target, attacker, action_name, try_to_nego_result)
             $ renpy.notify("[target.name]: [target.spare_progress]/[target.spare_max]")
+        elif getattr(target, "nameeng", None) == "dummy" or target.name == "Манекен":
+            $ apply_act_to_enemy(target, action_name, try_to_nego_result)
+            $ dummy_apply_act(target, attacker, action_name, try_to_nego_result)
+            $ renpy.notify("[target.name]: [target.spare_progress]/[target.spare_max]")
         else:
             $ apply_enemy_act_mechanics(action_name)
 
@@ -1310,8 +1318,10 @@ init python:
         enemy_name = getattr(enemy, "name", None)
         mood = getattr(enemy, "mood", "neutral")
 
-        # Для Арчи прогресс и откаты задаются его собственным деревом.
-        if enemy_name == "Арчи":
+        # Для Арчи и Манекена прогресс/откаты задаются их собственными деревьями
+        # (archie_mood_tree / dummy_mood_tree). Здесь возвращаем 0, чтобы
+        # apply_act_to_enemy() не двигал spare_progress второй раз.
+        if enemy_name == "Арчи" or enemy_name == "Манекен" or getattr(enemy, "nameeng", None) == "dummy":
             return 0
 
         if enemy_name and attacker_name:

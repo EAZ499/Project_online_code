@@ -41,6 +41,9 @@ init python:
         """
         if enemy is None or getattr(enemy, "current_hp", 0) <= 0:
             return False
+        # Манекен не атакует
+        if "dummy_is_maneken" in globals() and dummy_is_maneken(enemy):
+            return False
         if getattr(enemy, "turn", 0) != 1:
             return False
         blocking_statuses = (
@@ -287,6 +290,13 @@ screen enemyattack:
             timer 16 / store.enemies["ДжевилV1"].speed action [Function(setattr, store.enemies["ДжевилV1"], "turn", 1)]
 
 
+
+    elif battlenumber == 12:
+        # Бой с одиноким Манекеном — у него нет атак.
+        # Короткий таймер завершает ход врага, дальше срабатывает
+        # all_battle_enemies_done() → afterenemyattack.
+        if hasattr(store, 'enemies') and store.enemies and "dummy" in store.enemies:
+            timer 0.5 action [Function(setattr, store.enemies["dummy"], "turn", 1)]
 
     elif battlenumber == 13:
         if hasattr(store, 'enemies') and store.enemies:
@@ -556,6 +566,8 @@ label afterenemyattack:
 
     $ apply_debuffs_at_round_start()
     $ apply_debuffs_at_round_start_enemies()
+    # «Это просто манекен»: скука в конце хода
+    $ dummy_apply_boredom()
     $ chara_on_round_end()
     $ frisk_prepare_round_end()
     # Иззи: диета, случайное провиденье, отсчёт кармы.
@@ -595,9 +607,9 @@ label afterenemyattack:
         for _char in store.pers_dict.values():
             _char.step_forward = 0
 
-    if _frog_aura_applied:
-        hide screen heroes_attacked_visual
-        show screen heroes_attacked_visual
+    #if _frog_aura_applied:
+    hide screen heroes_attacked_visual
+    show screen heroes_attacked_visual
 
     # ШАГ 3: Пауза ТОЛЬКО после полной остановки физики
     $ renpy.pause(2.0, hard=True)
