@@ -2627,13 +2627,63 @@ init python:
             # Дебаффы переговоров могут временно снижать атаку ниже базы.
             self.bonus_atk2 = max(value, -0.9)
 
+        # ============================================================
+        # ДИНАМИЧЕСКИЕ ДЕБАФФЫ ВРАГА (ШАГ 5%)
+        # ============================================================
+
+        # 1. Атака (множитель вокруг 1.0): дебафф снижает, бафф повышает
         @property
         def atk_debuff_var(self):
-            return max(getattr(self, 'atk_debuff_var2', 1.0), 0.0)
+            return max(1.0 - getattr(self, "atk_debuff", 0) * 0.05, 0.0)
 
         @atk_debuff_var.setter
         def atk_debuff_var(self, value):
-            self.atk_debuff_var2 = max(value, 0.0)
+            pass  # Пустышка для защиты от ошибок, если старый код попытается присвоить значение напрямую
+
+        # 2. Защита (множитель вокруг 1.0): def_debuff < 0 даёт бонус к броне
+        @property
+        def def_debuff_var(self):
+            return max(1.0 - getattr(self, "def_debuff", 0) * 0.05, 0.0)
+
+        @def_debuff_var.setter
+        def def_debuff_var(self, value):
+            pass
+
+        # 3. Магия (множитель вокруг 1.0)
+        @property
+        def magic_debuff_var(self):
+            return max(1.0 - getattr(self, "magic_debuff", 0) * 0.05, 0.0)
+
+        @magic_debuff_var.setter
+        def magic_debuff_var(self, value):
+            pass
+
+        # 4. Точность (аддитивный сдвиг вокруг 0.0)
+        @property
+        def accuracy_debuff_var(self):
+            return max(0.0 - getattr(self, "accuracy_debuff", 0) * 0.05, -0.5)
+
+        @accuracy_debuff_var.setter
+        def accuracy_debuff_var(self, value):
+            pass
+
+        # 5. Крит-шанс (аддитивный сдвиг вокруг 0.0)
+        @property
+        def critrate_debuff_var(self):
+            return max(0.0 - getattr(self, "critrate_debuff", 0) * 0.05, -0.5)
+
+        @critrate_debuff_var.setter
+        def critrate_debuff_var(self, value):
+            pass
+
+        # 6. Крит-урон (аддитивный сдвиг вокруг 0.0)
+        @property
+        def critdmg_debuff_var(self):
+            return max(0.0 - getattr(self, "critdmg_debuff", 0) * 0.05, -0.5)
+
+        @critdmg_debuff_var.setter
+        def critdmg_debuff_var(self, value):
+            pass
 
         @property
         def base_magic_mod(self):
@@ -2646,14 +2696,6 @@ init python:
         @bonus_magic.setter
         def bonus_magic(self, value):
             self.bonus_magic2 = value
-
-        @property
-        def magic_debuff_var(self):
-            return max(getattr(self, 'magic_debuff_var2', 1.0), 0.0)
-
-        @magic_debuff_var.setter
-        def magic_debuff_var(self, value):
-            self.magic_debuff_var2 = max(value, 0.0)
 
         @property
         def base_def(self):
@@ -2678,14 +2720,6 @@ init python:
         @bonus_def.setter
         def bonus_def(self, value):
             self.bonus_def2 = value
-
-        @property
-        def def_debuff_var(self):
-            return max(getattr(self, 'def_debuff_var2', 1.0), 0.0)
-
-        @def_debuff_var.setter
-        def def_debuff_var(self, value):
-            self.def_debuff_var2 = max(value, 0.0)
 
         @property
         def armor(self):
@@ -2784,30 +2818,6 @@ init python:
         @bonus_dmgchance.setter
         def bonus_dmgchance(self, value):
             self.bonus_dmgchance2 = float(value)
-
-        @property
-        def accuracy_debuff_var(self):
-            return max(getattr(self, 'accuracy_debuff_var2', 0.0), -0.5)
-
-        @accuracy_debuff_var.setter
-        def accuracy_debuff_var(self, value):
-            self.accuracy_debuff_var2 = max(value, -0.5)
-
-        @property
-        def critrate_debuff_var(self):
-            return max(getattr(self, 'critrate_debuff_var2', 0.0), -0.5)
-
-        @critrate_debuff_var.setter
-        def critrate_debuff_var(self, value):
-            self.critrate_debuff_var2 = max(value, -0.5)
-
-        @property
-        def critdmg_debuff_var(self):
-            return max(getattr(self, 'critdmg_debuff_var2', 0.0), -0.5)
-
-        @critdmg_debuff_var.setter
-        def critdmg_debuff_var(self, value):
-            self.critdmg_debuff_var2 = max(value, -0.5)
 
         @property
         def perform(self):
