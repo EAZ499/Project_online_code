@@ -225,6 +225,7 @@ label start2:
     $ add_consumable("food_sparkling_water", 1)
     $ add_consumable("food_still_water", 1)
     $ add_consumable("food_frenchfries", 1)
+    $ add_consumable("food_ultima_elixir",2)
 
 
     # даём всё одноразовое оружие в инвентарь
@@ -239,6 +240,7 @@ label start2:
     $ add_consumable("wep_bath_bombs", 3)
     $ add_consumable("wep_constructor", 3)
     $ add_consumable("wep_flashlight", 3)
+    
 
 
     $ quick_menu = True

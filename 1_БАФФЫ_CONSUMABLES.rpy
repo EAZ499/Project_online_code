@@ -282,6 +282,14 @@ default consumable_effects_level1 = {
         "over_heal": 0,
         "over_mana": 0
     },
+    # Ультимативный расходник — Эликсир Всесилия
+    "food_ultima_elixir": {
+        "hp_percent": 1.0,       # полностью восстанавливает HP (с overheal до 1.5x)
+        "mp_heal": 9999,         # полностью восстанавливает MP (с overmana до 1.5x)
+        "shield_heal": 10,       # +10 щитов
+        "over_heal": 1,
+        "over_mana": 1,
+    },
 }
 
 # ------------------------------------------------------------
@@ -424,6 +432,16 @@ default consumable_effects_level2 = {
     },
     "food_icecream": {
         "atk_debuff": -2,
+    },
+    # Ультимативный расходник — 100 стаков баффов
+    # (отрицательные значения = бафф; каждый стак даёт свой % по формуле *_debuff_var)
+    "food_ultima_elixir": {
+        "atk_debuff":      -100,   # Cheerful x100
+        "def_debuff":      -100,   # Inspired x100
+        "magic_debuff":    -100,   # Enlighted x100
+        "accuracy_debuff": -100,   # Focused x100
+        "critrate_debuff": -100,   # Luck x100
+        "critdmg_debuff":  -100,   # Anger x100
     },
 }
 
@@ -632,6 +650,17 @@ default consumable_effects_level3 = {
         "bonus_diplomacy": 1,
         "bonus_charm": 15,
         "bonus_rhetoric": 1,
+    },
+    # Ультимативный расходник — +100% ко всем бонусным характеристикам
+    "food_ultima_elixir": {
+        "bonus_atk":      1.0,   # +100% к множителю атаки
+        "bonus_def":      1.0,   # +100% к множителю защиты
+        "bonus_magic":    1.0,   # +100% к множителю магии
+        "bonus_accuracy": 1.0,   # +100 п.п. к бонусной точности
+        "bonus_critrate": 1.0,   # +100 п.п. к бонусному крит-шансу
+        "bonus_critdmg":  1.0,   # +100 п.п. к бонусному крит-урону
+        "bonus_tank":     15,    # +15 к танку (≈ +50% от базы; потолок total_tank = 50)
+        "revive":         1,     # поднимает павшего (в т.ч. врага)
     },
 }
 
@@ -1637,7 +1666,8 @@ init python:
             "pot_def_3", "pot_def_5",
             "pot_crit_3", "pot_crit_5",
             "pot_acc_3", "pot_acc_5",
-            "pot_all_3", "pot_all_5"
+            "pot_all_3", "pot_all_5",
+            "food_ultima_elixir",   # Ультимативный расходник — Эликсир Всесилия
         ]
         for item_id in consumables_to_add:
             if item_id not in store.consumable_inventory:

@@ -1,4 +1,4 @@
-﻿
+
 default raw_damage_for_vis = 0
 # Переменные состояния игры
 default current_char = "Крис"
@@ -974,6 +974,7 @@ default consumable_names = {
     "food_sparkling_water": "Газированная вода",
     "food_still_water": "Негазированная вода",
     "food_frenchfries": "Френчфрайз",
+    "food_ultima_elixir": "Эликсир Всесилия",
     # Одноразовое оружие
     "wep_water_pistol": "Водяной пистолет",
     "wep_water_bomb": "Водяная бомба",
@@ -1092,6 +1093,9 @@ default consumable_descriptions = {
     "food_frenchfries": {
         "description": " Картошка, жаренная во флитюре. Топпинги и соусы к ней продаются отдельно. Будем надеяться, что она была в свежем масле.",
     },
+    "food_ultima_elixir": {
+        "description": " Легендарный эликсир, сваренный из звёздной пыли и чистой воли. Один глоток дарует невероятную мощь: все бонусные характеристики удваиваются, а тело наполняется сотней стаков укрепляющих баффов (Cheerful, Inspired, Enlighted, Focused, Luck, Anger — по x100 на сто раундов). Полностью восстанавливает HP и MP, дарует 10 щитов и поднимает павшего союзника. Рецепт утерян много веков назад — и это к лучшему.",
+    },
     "wep_water_pistol": {
         "description": " Хороший способ пить газировку. Или заставить врагов чувствовать себя неловко...",
     },
@@ -1181,6 +1185,7 @@ default consumable_food_types = {
     "food_sparkling_water": "drink",
     "food_still_water": "drink",
     "food_frenchfries": "junkfood",
+    "food_ultima_elixir": "other",
     "wep_water_pistol": "weapon",
     "wep_water_bomb": "weapon",
     "wep_toothpick": "weapon",
@@ -1271,6 +1276,7 @@ default consumable_prices = {
     "food_sparkling_water": 11,
     "food_still_water": 11,
     "food_frenchfries": 9,
+    "food_ultima_elixir": 5000,
 
 
     "wep_water_pistol": 25,
