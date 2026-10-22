@@ -94,6 +94,10 @@ label fightbegin12:
     $ sedric_reset_battle_passives()
     $ init_all_frogs_battle_state()
 
+    # Фрогетта: критшанс 100% — только в бою с лягушками.
+    if battlenumber == 20:
+        call froggette_crit_100
+
     # Лягушки «осмотрены 5 раз» ещё до первого хода (только battlenumber == 20):
     # раскрывает пассивки/HP в описании и красит кнопки ACT как при реальном осмотре.
     call mark_frogs_checked_from_start

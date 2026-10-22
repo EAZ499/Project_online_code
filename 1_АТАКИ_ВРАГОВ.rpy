@@ -58,12 +58,17 @@ init python:
         return True
 
     def frog_hover_attack(frog):
-        """Атака лягушки по наведению. Одна атака за раунд.
+        """Атака лягушки по наведению. Сколько угодно раз за раунд.
 
-        enemy_attack_and_show_results → enemy_can_take_turn требует
-        enemy.turn == 1. Поэтому перед вызовом явно ставим turn = 1,
-        а флаг `_frog_hover_attacked` защищает от повторных hovered
-        на ту же лягушку в этом раунде.
+        Не сбрасывает turn обратно в 0 после атаки: turn = 1 нужен
+        только для прохождения enemy_can_take_turn внутри
+        enemy_attack_and_show_results. Оставляем его в 1, чтобы
+        повторное наведение снова атаковало.
+
+        Новый раунд начнётся только когда все четыре лягушки
+        получат turn = 1 — либо через hover, либо через таймеры
+        в screen enemyattack. Сброс turn в 0 для всех делает
+        afterenemyattack (это round-end, а не damage-функция).
         """
         if frog is None:
             return
@@ -71,10 +76,7 @@ init python:
             return
         if getattr(frog, "dead", False):
             return
-        if getattr(frog, "_frog_hover_attacked", False):
-            return
 
-        frog._frog_hover_attacked = True
         frog.turn = 1
         enemy_attack_and_show_results(frog)
 
@@ -308,6 +310,12 @@ screen enemyattack:
     elif battlenumber == 20:  # Лягушки
         if hasattr(store, 'enemies') and store.enemies:
             $ _frog_names = ["Фроглин", "Фрогетта", "Фрогестер", "Фрогис"]
+            $ _frog_colors = {
+                "Фроглин":   ("#1a2a1a", "#3a5a3a"),
+                "Фрогетта":  ("#2a1a2a", "#5a3a5a"),
+                "Фрогестер": ("#2a2a1a", "#5a5a3a"),
+                "Фрогис":    ("#1a1a2a", "#3a3a5a"),
+            }
             vbox:
                 xalign 0.5
                 yalign 0.5
@@ -315,16 +323,23 @@ screen enemyattack:
                 for _fname in _frog_names:
                     $ _frog = store.enemies.get(_fname)
                     if _frog is not None:
-                        textbutton _fname:
-                            text_size 40
-                            text_color "#ffffff"
-                            text_hover_color "#ffff00"
-                            text_outlines [(2, "#000000", 0, 0)]
+                        $ _bg, _hover_bg = _frog_colors[_fname]
+                        button:
+                            xysize (420, 74)
+                            background Solid(_bg)
+                            hover_background Solid(_hover_bg)
                             action NullAction()
                             hovered [
                                 SetVariable("enemy_ind_atk_ratio", 1.0),
                                 Function(frog_hover_attack, _frog)
                             ]
+                            text _fname:
+                                xalign 0.5
+                                yalign 0.5
+                                size 42
+                                color "#ffffff"
+                                hover_color "#ffff00"
+                                outlines [(2, "#000000", 0, 0)]
             # Таймеры завершения хода для каждого
             timer 10.5 / store.enemies["Фроглин"].speed  action [Function(setattr, store.enemies["Фроглин"],  "turn", 1)]
             timer 10.5 / store.enemies["Фрогетта"].speed action [Function(setattr, store.enemies["Фрогетта"], "turn", 1)]
@@ -689,3 +704,12 @@ screen faster_attack_10_1:
     timer 1/ store.enemies["Тревор"].speed action [Function(setattr, store.enemies["Тревор"], "turn", 1)]
     timer 1 / store.enemies["ДжевилV1"].speed action [Function(setattr, store.enemies["ДжевилV1"], "turn", 1)]
     timer 1 / store.enemies["Психолог"].speed action [Function(setattr, store.enemies["Психолог"], "turn", 1)]
+
+label froggette_crit_100:
+    $ _fg = store.enemies.get("Фрогетта")
+    if _fg is not None:
+        # base_critrate — реальное поле, которое читает свойство critrate.
+        # 1.0 = 100% (в долях). Просто critrate = 100 не сработает:
+        # у свойства critrate нет рабочего сеттера для этого поля.
+        $ _fg.base_critrate = 1.0
+    return
