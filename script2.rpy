@@ -264,12 +264,12 @@ label start2:
     $ store.enemies["dummy"].bloodshed_debuff = 4
     $ store.enemies["dummy"].prone_debuff = 1
     $ store.enemies["dummy"].atk_debuff = -4
-    $ store.enemies["dummy"].def_debuff = -2
+    $ store.enemies["dummy"].def_debuff = -60
     $ store.enemies["dummy"].critdmg_debuff = -4
     $ store.enemies["dummy"].shield = 2
     $ store.enemies["dummy"].bonus_atk2 += 0.2
     $ store.enemies["dummy"].bonus_magic2 += 0.2
-    $ store.enemies["dummy"].bonus_def2 += 0.2
+    $ store.enemies["dummy"].bonus_def2 -= 0.2
     $ store.enemies["dummy"].bonus_crit2 += 0.2
     $ store.enemies["dummy"].bonus_critrate2 += 0.2
     

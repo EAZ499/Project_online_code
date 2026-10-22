@@ -321,7 +321,7 @@ init python:
             "mood": {
                 "neutral": [
                     ("Полностью поддатливый", "Проверки социальных характеристик при действиях против манекена имеют очень низкую сложность."),
-                    ("Особо не пофармишь", "Не даёт денег и опыта при победе над ним. А ты надеялся за него"),
+                    ("Особо не пофармишь", "Не даёт денег и опыта при победе над ним. А ты надеялся за него что-то получить?"),
                 ],
                 "sad":        [("—", "Нет особых эффектов настроения.")],
                 "happy":      [("—", "Нет особых эффектов настроения.")],
@@ -507,40 +507,58 @@ init python:
 
         result = []
 
-        # Статусные эффекты — уже 3-кортежи
+        # Статусные эффекты — иконка + простой текст (не бонус)
         _bleed = getattr(enemy, "bloodshed_debuff", 0)
         if _bleed > 0:
             result.append(("bloodshed.png", False, "x%d" % int(round(_bleed))))
         if getattr(enemy, "prone_debuff", 0) > 0:
             result.append(("prone.png", False, None))
 
-        # Инициальные значения бонусов (по умолчанию 0.0)
+        init_stats   = getattr(enemy, "initial_stats",   {}) or {}
         init_bonuses = getattr(enemy, "initial_bonuses", {}) or {}
 
-        # Таблица бонусов: (ключ, текущее_значение, green_icon, red_icon, в_процентах)
-        bonus_table = [
-            ("bonus_atk",       getattr(enemy, "bonus_atk", 0.0),       "atk_green_icon.png",       "atk_red_icon.png",       True),
-            ("bonus_magic",     getattr(enemy, "bonus_magic", 0.0),     "mag_green_icon.png",       "mag_red_icon.png",       True),
-            ("bonus_def",       getattr(enemy, "bonus_def", 0.0),       "def_green_icon.png",       "def_red_icon.png",       True),
-            ("bonus_dmgchance", getattr(enemy, "bonus_dmgchance", 0.0), "dmgchance_green_icon.png", "dmgchance_red_icon.png", True),
-            ("bonus_critrate",  getattr(enemy, "bonus_critrate", 0.0),  "critrate_green_icon.png",  "critrate_red_icon.png",  True),
-            ("bonus_crit",      getattr(enemy, "bonus_crit", 0.0),      "critdmg_green_icon.png",   "critdmg_red_icon.png",   True),
-            ("bonus_tank",      getattr(enemy, "bonus_tank", 0.0),      "tank_green_icon.png",      "tank_red_icon.png",      False),
+        # (стат, текущее, начальное, ключ_бонуса, зелёная_иконка, красная_иконка, бонус_в_процентах)
+        stat_table = [
+            ("atk",        enemy.atk,        init_stats.get("atk", 0),        "bonus_atk",       "atk_green_icon.png",       "atk_red_icon.png",       True),
+            ("magic",      enemy.magic,      init_stats.get("magic", 0),      "bonus_magic",     "mag_green_icon.png",       "mag_red_icon.png",       True),
+            ("defense",    enemy.defense,    init_stats.get("defense", 0),    "bonus_def",       "def_green_icon.png",       "def_red_icon.png",       True),
+            ("dmgchance",  enemy.dmgchance,  init_stats.get("dmgchance", 0),  "bonus_dmgchance", "dmgchance_green_icon.png", "dmgchance_red_icon.png", True),
+            ("critrate",   enemy.critrate,   init_stats.get("critrate", 0),   "bonus_critrate",  "critrate_green_icon.png",  "critrate_red_icon.png",  True),
+            ("crit",       enemy.crit,       init_stats.get("crit", 1.0),     "bonus_crit",      "critdmg_green_icon.png",   "critdmg_red_icon.png",   True),
+            ("total_tank", enemy.total_tank, init_stats.get("total_tank", 0), "bonus_tank",      "tank_green_icon.png",      "tank_red_icon.png",      False),
         ]
 
-        for key, curr_val, green_icon, red_icon, is_pct in bonus_table:
-            base_val = init_bonuses.get(key, 0.0)
-            diff = curr_val - base_val
-
-            if abs(diff) < 0.001:
+        for _stat_key, current_val, initial_val, bonus_key, green_icon, red_icon, is_pct in stat_table:
+            try:
+                curr = float(current_val)
+                init = float(initial_val)
+            except Exception:
                 continue
 
-            is_buff = diff > 0
-            icon = green_icon if is_buff else red_icon
-            bonus_text = enemydesc_bonus_text(diff, is_pct)  # "" при нуле, иначе "+20%" / "+2"
+            stat_diff = curr - init
+            if abs(stat_diff) < 0.001:
+                continue  # стат не менялся — иконки нет
 
-            if bonus_text:
-                result.append((icon, is_buff, bonus_text))
+            try:
+                bonus_now  = float(getattr(enemy, bonus_key, 0.0))
+                bonus_init = float(init_bonuses.get(bonus_key, 0.0))
+            except Exception:
+                bonus_now = bonus_init = 0.0
+            bonus_diff = bonus_now - bonus_init
+
+            # Цвет: приоритет — знак бонуса, если он ненулевой;
+            # иначе — знак общего изменения стата.
+            if abs(bonus_diff) >= 0.001:
+                is_buff = bonus_diff > 0
+            else:
+                is_buff = stat_diff > 0
+
+            icon = green_icon if is_buff else red_icon
+
+            # Цифра — только если bonus ≠ 0
+            bonus_text = enemydesc_bonus_text(bonus_diff, is_pct) if abs(bonus_diff) >= 0.001 else ""
+
+            result.append((icon, is_buff, bonus_text if bonus_text else None))
 
         return result
 
